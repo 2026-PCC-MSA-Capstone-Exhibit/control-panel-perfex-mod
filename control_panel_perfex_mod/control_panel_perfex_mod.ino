@@ -1,4 +1,16 @@
+// No installation required: These WiFi libraries are already built into Arduino Core for ESP32.
+#include "WiFi.h"
+#include <WiFiUdp.h>
+
+/* 
+  Install via Sketch > Include Library > Add .ZIP Library... > [Select OSC-master.zip from the Libraries folder of this repo]
+  Source: https://github.com/CNMAT/OSC
+*/
+#include <OSCMessage.h>
+
+// Install via Library Manager: Adafruit NeoPixel by Adafruit
 #include <Adafruit_NeoPixel.h>
+
 
 #define RGB_LED_PIN 48
 #define PERFEX_INTERCOM_BUTTON_PIN  4
