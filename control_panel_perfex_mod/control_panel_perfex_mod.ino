@@ -33,22 +33,22 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 
 
 // Pins dedicated to buttons
-#define PERFEX_BUTTON_TONE_PIN  4 // Normally open switch
-#define PERFEX_BUTTON_ALARM_ON_PIN 5 // Normally closed switch
-#define PERFEX_BUTTON_VOICE_RECORDER_SWITCH_PIN 6
-#define PERFEX_BUTTON_HOT_SHOT_ON_PIN 7 // Normally closed switch
+#define PERFEXMOD_BUTTON_TONE_PIN  4 // Normally open switch
+#define PERFEXMOD_BUTTON_ALARM_ON_PIN 5 // Normally closed switch
+#define PERFEXMOD_BUTTON_VOICE_RECORDER_SWITCH_PIN 6
+#define PERFEXMOD_BUTTON_HOT_SHOT_ON_PIN 7 // Normally closed switch
 
-#define PERFEX_BUTTON_INTERCOM_PIN 15 // Normally closed switch
-#define PERFEX_BUTTON_4_PIN 16 // Normally closed switch
-#define PERFEX_BUTTON_3_PIN 17 // Normally closed switch
-#define PERFEX_BUTTON_2_PIN 18 // Normally closed switch
-#define PERFEX_BUTTON_1_PIN 8 // Normally closed switch
+#define PERFEXMOD_BUTTON_INTERCOM_PIN 15 // Normally closed switch
+#define PERFEXMOD_BUTTON_4_PIN 16 // Normally closed switch
+#define PERFEXMOD_BUTTON_3_PIN 17 // Normally closed switch
+#define PERFEXMOD_BUTTON_2_PIN 18 // Normally closed switch
+#define PERFEXMOD_BUTTON_1_PIN 8 // Normally closed switch
 
 // Pins dedicated to Perfex knobs
-#define PERFEX_KNOB_LOUDSPEAKER_VOLUME_PIN 3
-#define PERFEX_KNOB_3_PIN 46
-#define PERFEX_KNOB_2_PIN 9
-#define PERFEX_KNOB_1_PIN 10
+#define PERFEXMOD_KNOB_LOUDSPEAKER_VOLUME_PIN 3
+#define PERFEXMOD_KNOB_3_PIN 46
+#define PERFEXMOD_KNOB_2_PIN 9
+#define PERFEXMOD_KNOB_1_PIN 10
 
 // Pins dedicated to other Perfex features
 // Loudspeaker
@@ -82,7 +82,7 @@ void setup() {
   Serial.println(OSC_PORT);
 
   // Use INPUT_PULLUP — no need to use resistors!
-  pinMode(PERFEX_BUTTON_TONE_PIN, INPUT_PULLUP); 
+  pinMode(PERFEXMOD_BUTTON_TONE_PIN, INPUT_PULLUP); 
 }
 
 bool isNormallyOpenButtonPressed(int buttonPin) {
@@ -105,15 +105,15 @@ void sendOSCMessage(const char* address, int value) {
 bool previousButtonStateTone = false;
 
 void loop() {
-  bool isButtonPressedTone = isNormallyOpenButtonPressed(PERFEX_BUTTON_TONE_PIN);
+  bool isButtonPressedTone = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_TONE_PIN);
   if (isButtonPressedTone != previousButtonStateTone) {
     previousButtonStateTone = isButtonPressedTone;
     if (isButtonPressedTone) {
       onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfex/button_tone", 1);
+      sendOSCMessage("/perfexmod/button_tone", 1);
     } else {
       onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfex/button_tone", 0);
+      sendOSCMessage("/perfexmod/button_tone", 0);
     }
     onboardRGBLED.show();
   }
