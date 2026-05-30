@@ -17,16 +17,16 @@
 #define RGB_LED_BRIGHTNESS  15
 
 // Pins dedicated to buttons
-#define PERFEX_TONE_BUTTON_PIN  4
-#define PERFEX_ALARM_ON_BUTTON_PIN 5
+#define PERFEX_TONE_BUTTON_PIN  4 // Normally open switch
+#define PERFEX_ALARM_ON_BUTTON_PIN 5 // Normally closed switch
 #define PERFEX_VOICE_RECORDER_SWITCH_BUTTON_PIN 6
-#define PERFEX_HOT_SHOT_ON_BUTTON_PIN 7
+#define PERFEX_HOT_SHOT_ON_BUTTON_PIN 7 // Normally closed switch
 
-#define PERFEX_INTERCOM_BUTTON_PIN 15
-#define PERFEX_BUTTON_4_PIN 16
-#define PERFEX_BUTTON_3_PIN 17
-#define PERFEX_BUTTON_2_PIN 18
-#define PERFEX_BUTTON_1_PIN 8
+#define PERFEX_INTERCOM_BUTTON_PIN 15 // Normally closed switch
+#define PERFEX_BUTTON_4_PIN 16 // Normally closed switch
+#define PERFEX_BUTTON_3_PIN 17 // Normally closed switch
+#define PERFEX_BUTTON_2_PIN 18 // Normally closed switch
+#define PERFEX_BUTTON_1_PIN 8 // Normally closed switch
 
 // Pins dedicated to Perfex knobs
 #define PERFEX_KNOB_LOUDSPEAKER_VOLUME_PIN 3
