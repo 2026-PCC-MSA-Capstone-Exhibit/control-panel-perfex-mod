@@ -18,9 +18,21 @@
 
 // Pins dedicated to buttons
 #define PERFEX_TONE_BUTTON_PIN  4
+#define PERFEX_ALARM_ON_BUTTON_PIN 5
+#define PERFEX_VOICE_RECORDER_SWITCH_BUTTON_PIN 6
+#define PERFEX_HOT_SHOT_ON_BUTTON_PIN 7
 
+#define PERFEX_INTERCOM_BUTTON_PIN 15
+#define PERFEX_BUTTON_4_PIN 16
+#define PERFEX_BUTTON_3_PIN 17
+#define PERFEX_BUTTON_2_PIN 18
+#define PERFEX_BUTTON_1_PIN 8
 
 // Pins dedicated to Perfex knobs
+#define PERFEX_KNOB_LOUDSPEAKER_VOLUME_PIN 3
+#define PERFEX_KNOB_3_PIN 46
+#define PERFEX_KNOB_2_PIN 9
+#define PERFEX_KNOB_1_PIN 10
 
 // Pins dedicated to other Perfex features
 
