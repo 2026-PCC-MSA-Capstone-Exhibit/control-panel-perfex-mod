@@ -49,12 +49,12 @@ void setup() {
   pinMode(PERFEX_TONE_BUTTON_PIN, INPUT_PULLUP); 
 }
 
-bool isNormallyOpenButtonPressed(int buttonPinState) {
-  return !!(digitalRead(buttonPinState) == LOW);
+bool isNormallyOpenButtonPressed(int buttonPin) {
+  return !!(digitalRead(buttonPin) == LOW);
 }
 
-bool isNormallyClosedButtonPressed(int buttonPinState) {
-  return !!(digitalRead(buttonPinState) == HIGH);
+bool isNormallyClosedButtonPressed(int buttonPin) {
+  return !!(digitalRead(buttonPin) == HIGH);
 }
 
 void loop() {
