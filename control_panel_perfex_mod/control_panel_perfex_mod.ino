@@ -27,35 +27,34 @@ const unsigned int OSC_PORT = 8000;
 
 // Onboard LED
 #define RGB_LED_PIN 48
-#define RGB_LED_COUNT    1
-#define RGB_LED_BRIGHTNESS  15
+#define RGB_LED_COUNT 1
+#define RGB_LED_BRIGHTNESS 15
 Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
+/*
+  PERFEXMOD PIN ASSIGNMENTS
+  Analog: Prefer GPIO 1-10 (ADC1) for stability with WiFi active?
+  Digital: Any GPIO except 19, 20 (USB) and 26-32 (internal flash)
+ */
 
-// Pins dedicated to buttons
-#define PERFEXMOD_BUTTON_TONE_PIN  4 // Normally open switch
-#define PERFEXMOD_BUTTON_ALARM_ON_PIN 5 // Normally closed switch
-#define PERFEXMOD_BUTTON_VOICE_RECORDER_SWITCH_PIN 6
-#define PERFEXMOD_BUTTON_HOT_SHOT_ON_PIN 7 // Normally closed switch
+#define PERFEXMOD_KNOB_LOUDSPEAKER_VOLUME_PIN 4
+#define PERFEXMOD_KNOB_3_PIN 5
+#define PERFEXMOD_KNOB_2_PIN 6
+#define PERFEXMOD_KNOB_1_PIN 7
 
-#define PERFEXMOD_BUTTON_INTERCOM_PIN 15 // Normally closed switch
-#define PERFEXMOD_BUTTON_4_PIN 16 // Normally closed switch
-#define PERFEXMOD_BUTTON_3_PIN 17 // Normally closed switch
-#define PERFEXMOD_BUTTON_2_PIN 18 // Normally closed switch
-#define PERFEXMOD_BUTTON_1_PIN 8 // Normally closed switch
+#define PERFEXMOD_MICROPHONE_PIN 8
+// #define PERFEXMOD_LOUDSPEAKER_PIN // TODO
 
-// Pins dedicated to Perfex knobs
-#define PERFEXMOD_KNOB_LOUDSPEAKER_VOLUME_PIN 3
-#define PERFEXMOD_KNOB_3_PIN 46
-#define PERFEXMOD_KNOB_2_PIN 9
-#define PERFEXMOD_KNOB_1_PIN 10
+#define PERFEXMOD_BUTTON_TONE_PIN 42  // Normally open switch
+#define PERFEXMOD_BUTTON_ALARM_ON_PIN 41 // Normally closed switch
+#define PERFEXMOD_BUTTON_VOICE_RECORDER_SWITCH_PIN 40
+#define PERFEXMOD_BUTTON_HOT_SHOT_ON_PIN 39 // Normally closed switch
 
-// Pins dedicated to other Perfex features
-// Loudspeaker
-// Microphone
-// Counter
-
-
+#define PERFEXMOD_BUTTON_INTERCOM_PIN 38 // Normally closed switch
+#define PERFEXMOD_BUTTON_4_PIN 37 // Normally closed switch
+#define PERFEXMOD_BUTTON_3_PIN 36 // Normally closed switch
+#define PERFEXMOD_BUTTON_2_PIN 35 // Normally closed switch
+#define PERFEXMOD_BUTTON_1_PIN 34 // Normally closed switch
 
 
 void setup() {
