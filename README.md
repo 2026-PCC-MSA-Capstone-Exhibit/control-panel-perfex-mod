@@ -3,7 +3,6 @@ A modified Perfex emergency service performance testing unit.
 
 Built with Arduino using an ESP32-S3.
 
-
 The main Arduino file is `control-panel-perfex-mod/control_panel_perfex_mod.ino`
 
 ## Installations/Dependencies
@@ -28,6 +27,18 @@ Then, manually install by opening the .ino file in Arduino IDE,
 
 `Sketch > Include Library > Add .ZIP Library... >` [Select OSC-master.zip from the Libraries folder of this repo]
 
+
+## Setting up Wifi connection
+
+1. Navigate to the directory `control_panel_perfex_mod/`
+
+2. Duplicate the file `private_credentials.ino`
+
+3. Rename the duplicated file `private_credentials.local.ino`
+
+4. Open `private_credentials.local.ino` and replace the placeholder WiFi SSID (name as it appears) and password.
+
+`private_credentials.local.ino` is used to store private credentials that won't be uploaded to Github because it is specified in .gitignore.
 
 ## Testing and Integrating
 
