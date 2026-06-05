@@ -1,29 +1,57 @@
-/* Create the file private_credentials.local.h to store private credentials that won't be uploaded to Github.
-   Duplicate the template private_credentials.h and specify your WIFI_SSID and WIFI_PASSWORD there
+/*
+  WIFI CREDENTIALS:
+  Create the file private_credentials.local.h to store private credentials that won't be uploaded to Github.
+  Duplicate the template private_credentials.h and specify your WIFI_SSID and WIFI_PASSWORD there
  */
 #include "private_credentials.local.h"
 
-// No installation required: These WiFi libraries are already built into Arduino Core for ESP32.
-#include "WiFi.h"
-#include <WiFiUdp.h>
-
 /* 
-  Install via Sketch > Include Library > Add .ZIP Library... > [Select OSC-master.zip from the Libraries folder of this repo]
+  OSC:
+  Installation required!
+  Go to Sketch > Include Library > Add .ZIP Library... > [Select OSC-master.zip from the Libraries folder of this repo]
   Source: https://github.com/CNMAT/OSC
  */
 #include <OSCMessage.h>
+const IPAddress OSC_BROADCAST_IP(255, 255, 255, 255);
+const unsigned int OSC_PORT = 8000;
 
-// Install via Library Manager: Adafruit NeoPixel by Adafruit
-#include <Adafruit_NeoPixel.h>
-
-// WIFI
+/*
+  WIFI:
+  No installation required: These WiFi libraries are already built into Arduino Core for ESP32.
+ */
+#include "WiFi.h"
+#include <WiFiUdp.h>
 const char* WIFI_SSID_STRING = WIFI_SSID;
 const char* WIFI_PASSWORD_STRING = WIFI_PASSWORD;
 WiFiUDP udp;
 
-// OSC
-const IPAddress OSC_BROADCAST_IP(255, 255, 255, 255);
-const unsigned int OSC_PORT = 8000;
+/*
+  SD Card Reading:
+  No installation required: SD and SPI are already built into Arduino Core for ESP32
+ */
+#include <SD.h>
+#include <SPI.h>
+
+/*
+  Audio playback from SD Card:
+  Installation Required!
+  Install via Library Manager: ESP8266Audio by Earle F. Philhower, III
+*/
+#include <AudioFileSourceSD.h>
+#include <AudioGeneratorWAV.h>
+#include <AudioOutputI2S.h>
+AudioFileSourceSD *audioFile;
+AudioGeneratorWAV *wav;
+AudioOutputI2S *audioOut;
+
+/*
+  LED:
+  Install via Library Manager: Adafruit NeoPixel by Adafruit
+ */
+#include <Adafruit_NeoPixel.h>
+
+/* ------------------------------------------------------------ */
+
 
 // Onboard LED
 #define RGB_LED_PIN 48
@@ -131,6 +159,31 @@ void sendOSCMessage(const char* address, int value) {
   msg.empty();
 }
 
+void setupSDCardReader() {
+  SPI.begin(PERFEXMOD_SD_SCK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
+  if (!SD.begin(PERFEXMOD_SD_CS_PIN)) {
+    Serial.println("SD card mount failed! :(");
+    return;
+  }
+  Serial.println("SD card mounted successfully! :)");
+}
+
+void setupAudio() {
+  audioOut = new AudioOutputI2S();
+  audioOut->SetPinout(
+    PERFEXMOD_SPEAKER_BCLK_PIN,
+    PERFEXMOD_SPEAKER_LRC_PIN,
+    PERFEXMOD_SPEAKER_DIN_PIN
+  );
+  audioOut->SetGain(0.5); // Volume range: 0.0-1.0
+}
+
+void playAudioWAV(const char* filename) {
+  audioFile = new AudioFileSourceSD(filename);
+  wav = new AudioGeneratorWAV();
+  wav->begin(audioFile, audioOut);
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -155,6 +208,9 @@ void setup() {
   Serial.print("Broadcasting OSC on port ");
   Serial.println(OSC_PORT);
 
+  setupSDCardReader();
+  setupAudio();
+
   // Use INPUT_PULLUP — no need to use resistors!
   for (int i = 0; i < BUTTON_COUNT; i++) {
     pinMode(BUTTON_PINS[i], INPUT_PULLUP);
@@ -163,6 +219,12 @@ void setup() {
 }
 
 void loop() {
+
+  if (wav && wav->isRunning()) {
+    if (!wav->loop()) {
+      wav->stop();
+    }
+  }
 
   // BUTTONS
   for (int i = 0; i < BUTTON_COUNT; i++) {
@@ -175,6 +237,7 @@ void loop() {
       if (isPressed) {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
+        playAudioWAV("/wavsource_airplane_chime_x.wav");
       } else {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);

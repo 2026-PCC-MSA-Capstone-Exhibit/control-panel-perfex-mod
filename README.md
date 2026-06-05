@@ -17,7 +17,7 @@ Download link: [https://www.arduino.cc/en/software/](https://www.arduino.cc/en/s
 
 `Boards Manager` > Install `esp32 by Espressif Systems`
 
-#### 3. Install the OSC by CNMAT library (in Arduino IDE)
+#### 3. Install Library: OSC by CNMAT (in Arduino IDE)
 
 [OSC by CNMAT](https://github.com/CNMAT/OSC) enables OpenSoundControl (OSC) communication. 
 
@@ -27,18 +27,30 @@ Then, manually install by opening the .ino file in Arduino IDE,
 
 `Sketch > Include Library > Add .ZIP Library... >` [Select OSC-master.zip from the Libraries folder of this repo]
 
+#### 4. Install Library: ESP8266Audio by Earle F. Philhower, III
+
+In the Library Manager, search for and install the `ESP8266Audio` library by `Earle F. Philhower, III`
+
+#### 5. Install Library: Adafruit NeoPixel by Adafruit
+
+In the Library Manager, search for and install the `Adafruit NeoPixel` library by `Adafruit`
 
 ## Setting up Wifi connection
 
 1. Navigate to the directory `control_panel_perfex_mod/`
 
-2. Duplicate the file `private_credentials.ino`
+2. Make a copy of the file `private_credentials.h`
 
-3. Rename the duplicated file `private_credentials.local.ino`
+3. Rename the duplicated file `private_credentials.local.h`
 
-4. Open `private_credentials.local.ino` and replace the placeholder WiFi SSID (name as it appears) and password.
+4. Open `private_credentials.local.h` and replace the placeholder WiFi SSID (name as it appears) and password.
 
-`private_credentials.local.ino` is used to store private credentials that won't be uploaded to Github because it is specified in .gitignore.
+`private_credentials.local.h` is used to store private credentials that won't be uploaded to Github because it is specified in .gitignore.
+
+## SD Card and Audio
+- Format the SD card as FAT32
+- Audio files: .WAV preferred but .MP3 acceptable. 
+- The `Audio` folder contains copies of .WAV files that are loaded onto an SD Card.
 
 ## Testing and Integrating
 
