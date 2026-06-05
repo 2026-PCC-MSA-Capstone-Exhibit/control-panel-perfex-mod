@@ -1,5 +1,5 @@
-/* Use this file to store private credentials that won't be uploaded to Github.
-   Create this file private_credentials.local.h using the template private_credentials.h and specify your WIFI_SSID and WIFI_PASSWORD here
+/* Create the file private_credentials.local.h to store private credentials that won't be uploaded to Github.
+   Duplicate the template private_credentials.h and specify your WIFI_SSID and WIFI_PASSWORD there
  */
 #include "private_credentials.local.h"
 
