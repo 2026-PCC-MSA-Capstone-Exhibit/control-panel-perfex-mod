@@ -39,20 +39,6 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 #define PERFEXMOD_KNOB_3_PIN 1
 #define PERFEXMOD_KNOB_4_PIN 2
 
-// Microphone (MAX9814): amazon.com/dp/B0B7SP6GYX
-#define PERFEXMOD_MICROPHONE_PIN 6
-
-// Speaker (MAX98357A): amazon.com/dp/B0B4GK5R1R
-#define PERFEXMOD_SPEAKER_BCLK_PIN 46
-#define PERFEXMOD_SPEAKER_LRC_PIN 9
-#define PERFEXMOD_SPEAKER_DIN_PIN 10
-
-// SD Card Reader: amazon.com/dp/B0BV8ZQ81F
-#define PERFEXMOD_SD_MOSI_PIN 11
-#define PERFEXMOD_SD_MISO_PIN 12
-#define PERFEXMOD_SD_SCK_PIN 13
-#define PERFEXMOD_SD_CS_PIN 14
-
 // Buttons
 #define PERFEXMOD_BUTTON_A_PIN 42
 #define PERFEXMOD_BUTTON_B_PIN 41
@@ -70,6 +56,20 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 #define PERFEXMOD_LED_2_PIN 16 // Red light
 #define PERFEXMOD_LED_3_PIN 17 // Yellow light
 #define PERFEXMOD_LED_4_PIN 18 // Green Light
+
+// Microphone (MAX9814): amazon.com/dp/B0B7SP6GYX
+#define PERFEXMOD_MICROPHONE_PIN 6
+
+// Speaker (MAX98357A): amazon.com/dp/B0B4GK5R1R
+#define PERFEXMOD_SPEAKER_BCLK_PIN 46
+#define PERFEXMOD_SPEAKER_LRC_PIN 9
+#define PERFEXMOD_SPEAKER_DIN_PIN 10
+
+// SD Card Reader: amazon.com/dp/B0BV8ZQ81F
+#define PERFEXMOD_SD_MOSI_PIN 11
+#define PERFEXMOD_SD_MISO_PIN 12
+#define PERFEXMOD_SD_SCK_PIN 13
+#define PERFEXMOD_SD_CS_PIN 14
 
 
 const int BUTTON_COUNT = 9;
@@ -119,6 +119,9 @@ bool isNormallyClosedButtonPressed(int buttonPin) {
   return digitalRead(buttonPin) == HIGH;
 }
 
+int previousMicValue = -1;
+
+
 void sendOSCMessage(const char* address, int value) {
   OSCMessage msg(address);
   msg.add(value);
@@ -161,7 +164,7 @@ void setup() {
 
 void loop() {
 
-  // Buttons
+  // BUTTONS
   for (int i = 0; i < BUTTON_COUNT; i++) {
     // TODO: Confirm button A is normally open?
     bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
@@ -180,21 +183,29 @@ void loop() {
     }
   }
 
-
+  // KNOBS
   // TODO: Refactor to work for all knobs
-  // Speaker volume knob
   int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
   Serial.print("rawKnobSpeakerVolumeValue: ");
-  Serial.print(rawKnobSpeakerVolumeValue);
-  Serial.println("");
+  Serial.println(rawKnobSpeakerVolumeValue);
   int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
     previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
     Serial.print("knobSpeakerVolumeValue: ");
-    Serial.print(knobSpeakerVolumeValue);
-    Serial.println("");
+    Serial.println(knobSpeakerVolumeValue);
     sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
   }
+
+  // MICROPHONE (MAX9814)
+  int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
+  int micValue = constrain(map(rawMicValue, 0, 4095, 0, 127), 0, 127);
+  if (micValue != previousMicValue) {
+    previousMicValue = micValue;
+    Serial.print("micValue: ");
+    Serial.println(micValue);
+    sendOSCMessage("/perfexmod/mic", micValue);
+  }
+
 }
 
 // TODO: Pot values are jittery probably due to not being properly grounded?
