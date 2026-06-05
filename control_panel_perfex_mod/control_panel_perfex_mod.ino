@@ -1,7 +1,7 @@
 /* Use this file to store private credentials that won't be uploaded to Github.
-   Create this file private-credentials.local.h using the template private-credentials.h and specify your WIFI_SSID and WIFI_PASSWORD here
+   Create this file private_credentials.local.h using the template private_credentials.h and specify your WIFI_SSID and WIFI_PASSWORD here
  */
-#include "private-credentials.local.h"
+#include "private_credentials.local.h"
 
 // No installation required: These WiFi libraries are already built into Arduino Core for ESP32.
 #include "WiFi.h"
@@ -31,31 +31,45 @@ const unsigned int OSC_PORT = 8000;
 #define RGB_LED_BRIGHTNESS 15
 Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
-/*
-  PERFEXMOD PIN ASSIGNMENTS
-  Analog: Prefer GPIO 1-10 (ADC1) for stability with WiFi active?
-  Digital: Any GPIO except 19, 20 (USB) and 26-32 (internal flash)
- */
+/* PERFEXMOD PIN ASSIGNMENTS */
 
-#define PERFEXMOD_KNOB_4_PIN 4
-#define PERFEXMOD_KNOB_3_PIN 5
-#define PERFEXMOD_KNOB_2_PIN 6
-#define PERFEXMOD_KNOB_1_PIN 7
+// Knobs
+#define PERFEXMOD_KNOB_1_PIN 4
+#define PERFEXMOD_KNOB_2_PIN 5
+#define PERFEXMOD_KNOB_3_PIN 1
+#define PERFEXMOD_KNOB_4_PIN 2
 
-#define PERFEXMOD_MICROPHONE_PIN 8
-// #define PERFEXMOD_SPEAKER_PIN // TODO
+// Microphone (MAX9814): amazon.com/dp/B0B7SP6GYX
+#define PERFEXMOD_MICROPHONE_PIN 6
 
-#define PERFEXMOD_BUTTON_A_PIN 40 // This switch maintains state
-#define PERFEXMOD_BUTTON_B_PIN 39 // Normally closed switch
-#define PERFEXMOD_BUTTON_C_PIN 42  // Normally open switch
-#define PERFEXMOD_BUTTON_D_PIN 41 // Normally closed switch
+// Speaker (MAX98357A): amazon.com/dp/B0B4GK5R1R
+#define PERFEXMOD_SPEAKER_BCLK_PIN 46
+#define PERFEXMOD_SPEAKER_LRC_PIN 9
+#define PERFEXMOD_SPEAKER_DIN_PIN 10
 
+// SD Card Reader: amazon.com/dp/B0BV8ZQ81F
+#define PERFEXMOD_SD_MOSI_PIN 11
+#define PERFEXMOD_SD_MISO_PIN 12
+#define PERFEXMOD_SD_SCK_PIN 13
+#define PERFEXMOD_SD_CS_PIN 14
 
-#define PERFEXMOD_BUTTON_5_PIN 38 // Normally closed switch
-#define PERFEXMOD_BUTTON_4_PIN 37 // Normally closed switch
+// Buttons
+#define PERFEXMOD_BUTTON_A_PIN 42 // This switch maintains state
+#define PERFEXMOD_BUTTON_B_PIN 41 // Normally closed switch
+#define PERFEXMOD_BUTTON_C_PIN 40  // Normally open switch
+#define PERFEXMOD_BUTTON_D_PIN 39 // Normally closed switch
+
+#define PERFEXMOD_BUTTON_1_PIN 38 // Normally closed switch
+#define PERFEXMOD_BUTTON_2_PIN 37 // Normally closed switch
 #define PERFEXMOD_BUTTON_3_PIN 36 // Normally closed switch
-#define PERFEXMOD_BUTTON_2_PIN 35 // Normally closed switch
-#define PERFEXMOD_BUTTON_1_PIN 34 // Normally closed switch
+#define PERFEXMOD_BUTTON_4_PIN 35 // Normally closed switch
+#define PERFEXMOD_BUTTON_5_PIN 47 // Normally closed switch
+
+// LEDs
+#define PERFEXMOD_LED_1_PIN 15 // "Microphone" Indicator
+#define PERFEXMOD_LED_2_PIN 16 // Red light
+#define PERFEXMOD_LED_3_PIN 17 // Yellow light
+#define PERFEXMOD_LED_4_PIN 18 // Green Light
 
 
 void setup() {
@@ -82,15 +96,24 @@ void setup() {
   Serial.println(OSC_PORT);
 
   // Use INPUT_PULLUP — no need to use resistors!
-  pinMode(PERFEXMOD_BUTTON_C_PIN, INPUT_PULLUP); 
+  pinMode(PERFEXMOD_BUTTON_A_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_B_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_C_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_D_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_1_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_2_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_3_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_4_PIN, INPUT_PULLUP);
+  pinMode(PERFEXMOD_BUTTON_5_PIN, INPUT_PULLUP);
+
 }
 
 bool isNormallyOpenButtonPressed(int buttonPin) {
-  return !!(digitalRead(buttonPin) == LOW);
+  return digitalRead(buttonPin) == LOW;
 }
 
 bool isNormallyClosedButtonPressed(int buttonPin) {
-  return !!(digitalRead(buttonPin) == HIGH);
+  return digitalRead(buttonPin) == HIGH;
 }
 
 void sendOSCMessage(const char* address, int value) {
