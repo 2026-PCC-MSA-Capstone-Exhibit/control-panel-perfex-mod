@@ -181,14 +181,19 @@ void loop() {
   }
 
 
+  // TODO: Refactor to work for all knobs
   // Speaker volume knob
-  int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_4_PIN);
-  int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 4095), 0, 4095);
+  int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
+  Serial.print("rawKnobSpeakerVolumeValue: ");
+  Serial.print(rawKnobSpeakerVolumeValue);
+  Serial.println("");
+  int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
     previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
-    Serial.print("knobSpeakerVolumeValue ");
-    Serial.println(knobSpeakerVolumeValue);
-    sendOSCMessage("/perfexmod/knob_4", knobSpeakerVolumeValue);
+    Serial.print("knobSpeakerVolumeValue: ");
+    Serial.print(knobSpeakerVolumeValue);
+    Serial.println("");
+    sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
   }
 }
 
