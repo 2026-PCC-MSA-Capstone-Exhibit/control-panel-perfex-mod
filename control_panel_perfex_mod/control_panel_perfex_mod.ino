@@ -54,22 +54,79 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 #define PERFEXMOD_SD_CS_PIN 14
 
 // Buttons
-#define PERFEXMOD_BUTTON_A_PIN 42 // This switch maintains state
-#define PERFEXMOD_BUTTON_B_PIN 41 // Normally closed switch
-#define PERFEXMOD_BUTTON_C_PIN 40  // Normally open switch
-#define PERFEXMOD_BUTTON_D_PIN 39 // Normally closed switch
+#define PERFEXMOD_BUTTON_A_PIN 42
+#define PERFEXMOD_BUTTON_B_PIN 41
+#define PERFEXMOD_BUTTON_C_PIN 40
+#define PERFEXMOD_BUTTON_D_PIN 39
 
-#define PERFEXMOD_BUTTON_1_PIN 38 // Normally closed switch
-#define PERFEXMOD_BUTTON_2_PIN 37 // Normally closed switch
-#define PERFEXMOD_BUTTON_3_PIN 36 // Normally closed switch
-#define PERFEXMOD_BUTTON_4_PIN 35 // Normally closed switch
-#define PERFEXMOD_BUTTON_5_PIN 47 // Normally closed switch
+#define PERFEXMOD_BUTTON_1_PIN 38
+#define PERFEXMOD_BUTTON_2_PIN 37
+#define PERFEXMOD_BUTTON_3_PIN 36
+#define PERFEXMOD_BUTTON_4_PIN 35
+#define PERFEXMOD_BUTTON_5_PIN 47
 
 // LEDs
 #define PERFEXMOD_LED_1_PIN 15 // "Microphone" Indicator
 #define PERFEXMOD_LED_2_PIN 16 // Red light
 #define PERFEXMOD_LED_3_PIN 17 // Yellow light
 #define PERFEXMOD_LED_4_PIN 18 // Green Light
+
+
+const int BUTTON_COUNT = 9;
+
+const int BUTTON_PINS[BUTTON_COUNT] = {
+  PERFEXMOD_BUTTON_A_PIN,
+  PERFEXMOD_BUTTON_B_PIN,
+  PERFEXMOD_BUTTON_C_PIN,
+  PERFEXMOD_BUTTON_D_PIN,
+  PERFEXMOD_BUTTON_1_PIN,
+  PERFEXMOD_BUTTON_2_PIN,
+  PERFEXMOD_BUTTON_3_PIN,
+  PERFEXMOD_BUTTON_4_PIN,
+  PERFEXMOD_BUTTON_5_PIN
+};
+const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
+  true, // BUTTON_A - Note: This switch maintains state // TODO: Confirm this
+  false, // BUTTON_B
+  true,  // BUTTON_C
+  false, // BUTTON_D
+  false, // BUTTON_1
+  false, // BUTTON_2
+  false, // BUTTON_3
+  false, // BUTTON_4
+  false  // BUTTON_5
+};
+const char* BUTTON_OSC_ADDRESSES[BUTTON_COUNT] = {
+  "/perfexmod/button_A",
+  "/perfexmod/button_B",
+  "/perfexmod/button_C",
+  "/perfexmod/button_D",
+  "/perfexmod/button_1",
+  "/perfexmod/button_2",
+  "/perfexmod/button_3",
+  "/perfexmod/button_4",
+  "/perfexmod/button_5"
+};
+
+bool previousButtonStates[BUTTON_COUNT] = { false };
+int previousKnobSpeakerVolumeValue = -1;
+
+bool isNormallyOpenButtonPressed(int buttonPin) {
+  return digitalRead(buttonPin) == LOW;
+}
+
+bool isNormallyClosedButtonPressed(int buttonPin) {
+  return digitalRead(buttonPin) == HIGH;
+}
+
+void sendOSCMessage(const char* address, int value) {
+  OSCMessage msg(address);
+  msg.add(value);
+  udp.beginPacket(OSC_BROADCAST_IP, OSC_PORT);
+  msg.send(udp);
+  udp.endPacket();
+  msg.empty();
+}
 
 
 void setup() {
@@ -96,170 +153,35 @@ void setup() {
   Serial.println(OSC_PORT);
 
   // Use INPUT_PULLUP — no need to use resistors!
-  pinMode(PERFEXMOD_BUTTON_A_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_B_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_C_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_D_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_1_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_2_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_3_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_4_PIN, INPUT_PULLUP);
-  pinMode(PERFEXMOD_BUTTON_5_PIN, INPUT_PULLUP);
+  for (int i = 0; i < BUTTON_COUNT; i++) {
+    pinMode(BUTTON_PINS[i], INPUT_PULLUP);
+  }
 
 }
-
-bool isNormallyOpenButtonPressed(int buttonPin) {
-  return digitalRead(buttonPin) == LOW;
-}
-
-bool isNormallyClosedButtonPressed(int buttonPin) {
-  return digitalRead(buttonPin) == HIGH;
-}
-
-void sendOSCMessage(const char* address, int value) {
-  OSCMessage msg(address);
-  msg.add(value);
-  udp.beginPacket(OSC_BROADCAST_IP, OSC_PORT);
-  msg.send(udp);
-  udp.endPacket();
-  msg.empty();
-}
-
-bool previousButtonStateA = false;
-bool previousButtonStateB = false;
-bool previousButtonStateC = false;
-bool previousButtonStateD = false;
-bool previousButtonState1 = false;
-bool previousButtonState2 = false;
-bool previousButtonState3 = false;
-bool previousButtonState4 = false;
-bool previousButtonState5 = false;
-int previousKnobSpeakerVolumeValue = -1;
 
 void loop() {
 
   // Buttons
-
-  // TODO: Refactor this code to have less repetition
-
-  bool isButtonPressedA = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_A_PIN);
-  if (isButtonPressedA != previousButtonStateA) {
-    previousButtonStateA = isButtonPressedA;
-    if (isButtonPressedA) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_A", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_A", 0);
+  for (int i = 0; i < BUTTON_COUNT; i++) {
+    // TODO: Confirm button A is normally open?
+    bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
+      ? isNormallyOpenButtonPressed(BUTTON_PINS[i])
+      : isNormallyClosedButtonPressed(BUTTON_PINS[i]);
+    if (isPressed != previousButtonStates[i]) {
+      previousButtonStates[i] = isPressed;
+      if (isPressed) {
+        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
+        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
+      } else {
+        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
+        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);
+      }
+      onboardRGBLED.show();
     }
-    onboardRGBLED.show();
   }
 
-  bool isButtonPressedB = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_B_PIN);
-  if (isButtonPressedB != previousButtonStateB) {
-    previousButtonStateB = isButtonPressedB;
-    if (isButtonPressedB) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_B", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_B", 0);
-    }
-    onboardRGBLED.show();
-  }
 
-  bool isButtonPressedC = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_C_PIN);
-  if (isButtonPressedC != previousButtonStateC) {
-    previousButtonStateC = isButtonPressedC;
-    if (isButtonPressedC) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_C", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_C", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressedD = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_D_PIN);
-  if (isButtonPressedD != previousButtonStateD) {
-    previousButtonStateD = isButtonPressedD;
-    if (isButtonPressedD) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_D", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_D", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressed1 = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_1_PIN);
-  if (isButtonPressed1 != previousButtonState1) {
-    previousButtonState1 = isButtonPressed1;
-    if (isButtonPressed1) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_1", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_1", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressed2 = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_2_PIN);
-  if (isButtonPressed2 != previousButtonState2) {
-    previousButtonState2 = isButtonPressed2;
-    if (isButtonPressed2) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_2", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_2", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressed3 = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_3_PIN);
-  if (isButtonPressed3 != previousButtonState3) {
-    previousButtonState3 = isButtonPressed3;
-    if (isButtonPressed3) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_3", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_3", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressed4 = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_4_PIN);
-  if (isButtonPressed4 != previousButtonState4) {
-    previousButtonState4 = isButtonPressed4;
-    if (isButtonPressed4) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_4", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_4", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  bool isButtonPressed5 = isNormallyOpenButtonPressed(PERFEXMOD_BUTTON_5_PIN);
-  if (isButtonPressed5 != previousButtonState5) {
-    previousButtonState5 = isButtonPressed5;
-    if (isButtonPressed5) {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-      sendOSCMessage("/perfexmod/button_5", 1);
-    } else {
-      onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-      sendOSCMessage("/perfexmod/button_5", 0);
-    }
-    onboardRGBLED.show();
-  }
-
-  // Loudspeaker volume knob
+  // Speaker volume knob
   int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_4_PIN);
   int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 4095), 0, 4095);
   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
