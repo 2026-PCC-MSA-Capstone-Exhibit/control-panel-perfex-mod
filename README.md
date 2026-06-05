@@ -5,6 +5,11 @@ Built with Arduino using an ESP32-S3.
 
 The main Arduino file is `control-panel-perfex-mod/control_panel_perfex_mod.ino`
 
+## Hardware
+
+- ESP32-S3 [Amazon link](https://www.amazon.com/dp/B0DG8L7MQ9)
+- // TODO: Add mic, speaker, sd card reader, sd card if they end up working
+
 ## Installations/Dependencies
 
 ### Arduino
