@@ -7,8 +7,10 @@ The main Arduino file is `control-panel-perfex-mod/control_panel_perfex_mod.ino`
 
 ## Hardware
 
-- ESP32-S3 [Amazon link](https://www.amazon.com/dp/B0DG8L7MQ9)
-- // TODO: Add mic, speaker, sd card reader, sd card if they end up working
+- ESP32-S3 Dev Board: [Amazon link](https://www.amazon.com/dp/B0DG8L7MQ9)
+- Microphone (MAX9814): [Amazon link](https://amazon.com/dp/B0B7SP6GYX)
+- Speaker Amplifier (MAX98357A): [Amazon link](https://amazon.com/dp/B0B4GK5R1R)
+- SD Card Reader: [Amazon Link](https://amazon.com/dp/B0BV8ZQ81F)
 
 ## Installations/Dependencies
 
