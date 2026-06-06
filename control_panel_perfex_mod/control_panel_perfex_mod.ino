@@ -35,14 +35,12 @@ WiFiUDP udp;
 /*
   Audio playback from SD Card:
   Installation Required!
-  Install via Library Manager: ESP8266Audio by Earle F. Philhower, III
+  Install via Library Manager: ESP32-audioI2S by schreibfaul1
 */
-#include <AudioFileSourceSD.h>
-#include <AudioGeneratorWAV.h>
-#include <AudioOutputI2S.h>
-AudioFileSourceSD *audioFile;
-AudioGeneratorWAV *wav;
-AudioOutputI2S *audioOut;
+#include <Audio.h>
+Audio audio;
+
+
 
 /*
   LED:
@@ -89,14 +87,15 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 #define PERFEXMOD_MICROPHONE_PIN 6
 
 // Speaker (MAX98357A): amazon.com/dp/B0B4GK5R1R
-#define PERFEXMOD_SPEAKER_BCLK_PIN 46
-#define PERFEXMOD_SPEAKER_LRC_PIN 9
-#define PERFEXMOD_SPEAKER_DIN_PIN 10
+#define PERFEXMOD_SPEAKER_DIN_PIN 46
+#define PERFEXMOD_SPEAKER_BCLK_PIN 9
+#define PERFEXMOD_SPEAKER_LRC_PIN 10
+
 
 // SD Card Reader: amazon.com/dp/B0BV8ZQ81F
 #define PERFEXMOD_SD_MOSI_PIN 11
-#define PERFEXMOD_SD_MISO_PIN 12
-#define PERFEXMOD_SD_SCK_PIN 13
+#define PERFEXMOD_SD_CLK_PIN 12
+#define PERFEXMOD_SD_MISO_PIN 13
 #define PERFEXMOD_SD_CS_PIN 14
 
 
@@ -113,16 +112,19 @@ const int BUTTON_PINS[BUTTON_COUNT] = {
   PERFEXMOD_BUTTON_4_PIN,
   PERFEXMOD_BUTTON_5_PIN
 };
+// const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
+//   true, // BUTTON_A - Note: This switch maintains state // TODO: Confirm this
+//   false, // BUTTON_B
+//   true,  // BUTTON_C
+//   false, // BUTTON_D
+//   false, // BUTTON_1
+//   false, // BUTTON_2
+//   false, // BUTTON_3
+//   false, // BUTTON_4
+//   false  // BUTTON_5
+// };
 const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
-  true, // BUTTON_A - Note: This switch maintains state // TODO: Confirm this
-  false, // BUTTON_B
-  true,  // BUTTON_C
-  false, // BUTTON_D
-  false, // BUTTON_1
-  false, // BUTTON_2
-  false, // BUTTON_3
-  false, // BUTTON_4
-  false  // BUTTON_5
+  true, true, true, true, true, true, true, true, true
 };
 const char* BUTTON_OSC_ADDRESSES[BUTTON_COUNT] = {
   "/perfexmod/button_A",
@@ -160,28 +162,25 @@ void sendOSCMessage(const char* address, int value) {
 }
 
 void setupSDCardReader() {
-  SPI.begin(PERFEXMOD_SD_SCK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
+  SPI.begin(PERFEXMOD_SD_CLK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
   if (!SD.begin(PERFEXMOD_SD_CS_PIN)) {
     Serial.println("SD card mount failed! :(");
     return;
   }
   Serial.println("SD card mounted successfully! :)");
+  Serial.print("SD card type:" );
+  Serial.println(SD.cardType());
+
 }
 
 void setupAudio() {
-  audioOut = new AudioOutputI2S();
-  audioOut->SetPinout(
-    PERFEXMOD_SPEAKER_BCLK_PIN,
-    PERFEXMOD_SPEAKER_LRC_PIN,
-    PERFEXMOD_SPEAKER_DIN_PIN
-  );
-  audioOut->SetGain(0.5); // Volume range: 0.0-1.0
+  // audio.setBufsize(4096, 4096); // Limit 4KB allocation towards the input buffer (reading from SD card) and output buffer (sending to MAX98357A).
+  audio.setPinout(PERFEXMOD_SPEAKER_BCLK_PIN, PERFEXMOD_SPEAKER_LRC_PIN, PERFEXMOD_SPEAKER_DIN_PIN);
+  audio.setVolume(15); // 0-21
 }
 
 void playAudioWAV(const char* filename) {
-  audioFile = new AudioFileSourceSD(filename);
-  wav = new AudioGeneratorWAV();
-  wav->begin(audioFile, audioOut);
+  audio.connecttoFS(SD, filename);
 }
 
 
@@ -211,63 +210,80 @@ void setup() {
   setupSDCardReader();
   setupAudio();
 
-  // Use INPUT_PULLUP — no need to use resistors!
-  for (int i = 0; i < BUTTON_COUNT; i++) {
-    pinMode(BUTTON_PINS[i], INPUT_PULLUP);
-  }
+//   Serial.print("Free heap: ");
+//   Serial.println(ESP.getFreeHeap());
+
+//   // Use INPUT_PULLUP — no need to use resistors!
+//   for (int i = 0; i < BUTTON_COUNT; i++) {
+//     pinMode(BUTTON_PINS[i], INPUT_PULLUP);
+//   }
 
 }
 
+bool hasPlayed = false;
+
 void loop() {
 
-  if (wav && wav->isRunning()) {
-    if (!wav->loop()) {
-      wav->stop();
-    }
+  // sendOSCMessage("/perfexmod/test", 1);
+  // Serial.println("alive");
+
+  audio.loop();
+  if (!hasPlayed) {
+    Serial.println(SD.exists("/wavsource_disconnect_911d_standardized.wav") ? "File found" : "File NOT found");
+    bool started = audio.connecttoFS(SD, "/wavsource_disconnect_911d_standardized.wav");
+    Serial.println(started ? "Playback started" : "Playback FAILED");
+    hasPlayed = true;
   }
 
-  // BUTTONS
-  for (int i = 0; i < BUTTON_COUNT; i++) {
-    // TODO: Confirm button A is normally open?
-    bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
-      ? isNormallyOpenButtonPressed(BUTTON_PINS[i])
-      : isNormallyClosedButtonPressed(BUTTON_PINS[i]);
-    if (isPressed != previousButtonStates[i]) {
-      previousButtonStates[i] = isPressed;
-      if (isPressed) {
-        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
-        playAudioWAV("/wavsource_airplane_chime_x.wav");
-      } else {
-        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);
-      }
-      onboardRGBLED.show();
-    }
-  }
 
-  // KNOBS
-  // TODO: Refactor to work for all knobs
-  int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
-  Serial.print("rawKnobSpeakerVolumeValue: ");
-  Serial.println(rawKnobSpeakerVolumeValue);
-  int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
-  if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
-    previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
-    Serial.print("knobSpeakerVolumeValue: ");
-    Serial.println(knobSpeakerVolumeValue);
-    sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
-  }
+//   // BUTTONS
+//   for (int i = 0; i < BUTTON_COUNT; i++) {
+//     // TODO: Confirm button A is normally open?
+//     bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
+//       ? isNormallyOpenButtonPressed(BUTTON_PINS[i])
+//       : isNormallyClosedButtonPressed(BUTTON_PINS[i]);
+//     if (isPressed != previousButtonStates[i]) {
+//       Serial.print("isPressed: ");
+//       Serial.println(isPressed);
+//       previousButtonStates[i] = isPressed;
+//       if (isPressed) {
+//         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
+//         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
+//         playAudioWAV("/wavsource_airplane_chime_x_standardized.wav");
+//       } else {
+//         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
+//         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);
+//       }
+//       onboardRGBLED.show();
+//     }
+//   }
 
-  // MICROPHONE (MAX9814)
-  int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
-  int micValue = constrain(map(rawMicValue, 0, 4095, 0, 127), 0, 127);
-  if (micValue != previousMicValue) {
-    previousMicValue = micValue;
-    Serial.print("micValue: ");
-    Serial.println(micValue);
-    sendOSCMessage("/perfexmod/mic", micValue);
-  }
+//   // KNOBS
+//   // TODO: Refactor to work for all knobs
+//   int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
+//   // Serial.print("rawKnobSpeakerVolumeValue: ");
+//   // Serial.println(rawKnobSpeakerVolumeValue);
+//   int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
+//   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
+//     previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
+//     // Serial.print("knobSpeakerVolumeValue: ");
+//     // Serial.println(knobSpeakerVolumeValue);
+//     sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
+//   }
+
+//   // MICROPHONE (MAX9814)
+//   int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
+//   // Serial.print("rawMicValue: ");
+//   // Serial.println(rawMicValue);
+//   int micValue = constrain(map(rawMicValue, 1000, 3000, 0, 127), 0, 127);
+//   if (micValue != previousMicValue) {
+//     previousMicValue = micValue;
+//     // Serial.print("micValue: ");
+//     // Serial.println(micValue);
+//     sendOSCMessage("/perfexmod/mic", micValue);
+//   }
+
+  // delay(10); // TODO adjust as needed
 
 }
 

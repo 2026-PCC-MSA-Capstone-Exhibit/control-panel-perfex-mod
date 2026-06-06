@@ -32,15 +32,31 @@ Then, manually install by opening the .ino file in Arduino IDE,
 
 `Sketch > Include Library > Add .ZIP Library... >` [Select OSC-master.zip from the Libraries folder of this repo]
 
-#### 4. Install Library: ESP8266Audio by Earle F. Philhower, III
+#### 4. Install Library: ESP32-audioI2S by schreibfaul1 (in Arduino IDE)
 
-In the Library Manager, search for and install the `ESP8266Audio` library by `Earle F. Philhower, III`
+In the Library Manager, search for and install the `ESP32-audioI2S` library by `schreibfaul1`
 
-#### 5. Install Library: Adafruit NeoPixel by Adafruit
+#### 5. Install Library: Adafruit NeoPixel by Adafruit (in Arduino IDE)
 
 In the Library Manager, search for and install the `Adafruit NeoPixel` library by `Adafruit`
 
-## Setting up Wifi connection
+
+## Settings in Arduino IDE
+
+### 1. Give the sketch more flash space to work with
+
+In Arduino IDE: `Tools` > `Partition Scheme` > `Huge APP (3MB No OTA/1MB SPIFFS)`
+
+This deals with "Compilation error: text section exceeds available space in board."
+
+### 2. Enable PSRAM (extra external memory on the board)
+
+In Arduino IDE: `Tools` > `PSRAM` > `OPI PSRAM`
+
+I think this is so that the audio library has somewhere to put its buffer.
+
+
+### Set up Wifi connection
 
 1. Navigate to the directory `control_panel_perfex_mod/`
 
