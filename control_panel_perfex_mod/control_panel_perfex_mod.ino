@@ -68,14 +68,15 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 // Buttons
 #define PERFEXMOD_BUTTON_A_PIN 42
 #define PERFEXMOD_BUTTON_B_PIN 41
-#define PERFEXMOD_BUTTON_C_PIN 40
-#define PERFEXMOD_BUTTON_D_PIN 39
+#define PERFEXMOD_BUTTON_1_PIN 40
+#define PERFEXMOD_BUTTON_2_PIN 39
+#define PERFEXMOD_BUTTON_3_PIN 38
+#define PERFEXMOD_BUTTON_4_PIN 7
+#define PERFEXMOD_BUTTON_5_PIN 8
+#define PERFEXMOD_BUTTON_C_PIN 47
+#define PERFEXMOD_BUTTON_D_PIN 21
 
-#define PERFEXMOD_BUTTON_1_PIN 38
-#define PERFEXMOD_BUTTON_2_PIN 37
-#define PERFEXMOD_BUTTON_3_PIN 36
-#define PERFEXMOD_BUTTON_4_PIN 35
-#define PERFEXMOD_BUTTON_5_PIN 47
+
 
 // LEDs
 #define PERFEXMOD_LED_1_PIN 15 // "Microphone" Indicator
@@ -112,20 +113,18 @@ const int BUTTON_PINS[BUTTON_COUNT] = {
   PERFEXMOD_BUTTON_4_PIN,
   PERFEXMOD_BUTTON_5_PIN
 };
-// const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
-//   true, // BUTTON_A - Note: This switch maintains state // TODO: Confirm this
-//   false, // BUTTON_B
-//   true,  // BUTTON_C
-//   false, // BUTTON_D
-//   false, // BUTTON_1
-//   false, // BUTTON_2
-//   false, // BUTTON_3
-//   false, // BUTTON_4
-//   false  // BUTTON_5
-// };
 const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
-  true, true, true, true, true, true, true, true, true
+  true, // BUTTON_A - Note: This switch maintains state
+  false, // BUTTON_B
+  true,  // BUTTON_C
+  false, // BUTTON_D
+  false, // BUTTON_1
+  false, // BUTTON_2
+  false, // BUTTON_3
+  false, // BUTTON_4
+  false  // BUTTON_5
 };
+
 const char* BUTTON_OSC_ADDRESSES[BUTTON_COUNT] = {
   "/perfexmod/button_A",
   "/perfexmod/button_B",
@@ -213,10 +212,10 @@ void setup() {
 //   Serial.print("Free heap: ");
 //   Serial.println(ESP.getFreeHeap());
 
-//   // Use INPUT_PULLUP — no need to use resistors!
-//   for (int i = 0; i < BUTTON_COUNT; i++) {
-//     pinMode(BUTTON_PINS[i], INPUT_PULLUP);
-//   }
+  // Use INPUT_PULLUP — no need to use resistors!
+  for (int i = 0; i < BUTTON_COUNT; i++) {
+    pinMode(BUTTON_PINS[i], INPUT_PULLUP);
+  }
 
 }
 
@@ -225,9 +224,6 @@ unsigned long lastMicOSCSendMilliseconds = 0;
 bool hasPlayed = false;
 
 void loop() {
-
-  // sendOSCMessage("/perfexmod/test", 1);
-  // Serial.println("alive");
 
   audio.loop();
   if (!hasPlayed) {
@@ -238,40 +234,41 @@ void loop() {
   }
 
 
-//   // BUTTONS
-//   for (int i = 0; i < BUTTON_COUNT; i++) {
-//     // TODO: Confirm button A is normally open?
-//     bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
-//       ? isNormallyOpenButtonPressed(BUTTON_PINS[i])
-//       : isNormallyClosedButtonPressed(BUTTON_PINS[i]);
-//     if (isPressed != previousButtonStates[i]) {
-//       Serial.print("isPressed: ");
-//       Serial.println(isPressed);
-//       previousButtonStates[i] = isPressed;
-//       if (isPressed) {
-//         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
-//         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
-//         playAudioWAV("/wavsource_airplane_chime_x_standardized.wav");
-//       } else {
-//         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
-//         sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);
-//       }
-//       onboardRGBLED.show();
-//     }
-//   }
+  // BUTTONS
+  for (int i = 0; i < BUTTON_COUNT; i++) {
+    // TODO: Confirm button A is normally open?
+    bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
+      ? isNormallyOpenButtonPressed(BUTTON_PINS[i])
+      : isNormallyClosedButtonPressed(BUTTON_PINS[i]);
+    if (isPressed != previousButtonStates[i]) {
+      Serial.print("isPressed: ");
+      Serial.print(BUTTON_OSC_ADDRESSES[i]);
+      Serial.print(" ");
+      Serial.println(isPressed);
+      previousButtonStates[i] = isPressed;
+      if (isPressed) {
+        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
+        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 1);
+      } else {
+        onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
+        sendOSCMessage(BUTTON_OSC_ADDRESSES[i], 0);
+      }
+      onboardRGBLED.show();
+    }
+  }
 
-//   // KNOBS
-//   // TODO: Refactor to work for all knobs
-//   int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
-//   // Serial.print("rawKnobSpeakerVolumeValue: ");
-//   // Serial.println(rawKnobSpeakerVolumeValue);
-//   int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
-//   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
-//     previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
-//     // Serial.print("knobSpeakerVolumeValue: ");
-//     // Serial.println(knobSpeakerVolumeValue);
-//     sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
-//   }
+// //   // KNOBS
+// //   // TODO: Refactor to work for all knobs
+// //   int rawKnobSpeakerVolumeValue = analogRead(PERFEXMOD_KNOB_1_PIN);
+// //   // Serial.print("rawKnobSpeakerVolumeValue: ");
+// //   // Serial.println(rawKnobSpeakerVolumeValue);
+// //   int knobSpeakerVolumeValue = constrain(map(rawKnobSpeakerVolumeValue, 400, 4095, 0, 127), 0, 127);
+// //   if (knobSpeakerVolumeValue != previousKnobSpeakerVolumeValue) {
+// //     previousKnobSpeakerVolumeValue = knobSpeakerVolumeValue;
+// //     // Serial.print("knobSpeakerVolumeValue: ");
+// //     // Serial.println(knobSpeakerVolumeValue);
+// //     sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
+// //   }
   
   int rawKnobValue = analogRead(PERFEXMOD_KNOB_1_PIN);
   // Serial.print("rawKnobValue: ");
@@ -284,15 +281,14 @@ void loop() {
     Serial.println(knobValue);
     // sendOSCMessage("/perfexmod/knob_1", knobValue);
   }
-  // PERFEXMOD_KNOB_1_PIN
 
-  // MICROPHONE (MAX9814)
+//   // MICROPHONE (MAX9814)
   int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
   // Serial.print("rawMicValue: ");
   // Serial.println(rawMicValue);
   int micValue = constrain(map(rawMicValue, 1200, 3000, 0, 127), 0, 127);
   bool isMicValueDifferent = micValue != previousMicValue;
-  bool isMicValueDifferentEnough = abs((micValue - previousMicValue) > 50); // this is janky so come up with a better way to differentiate sounds from ambient
+  bool isMicValueDifferentEnough = abs((micValue - previousMicValue)) > 50; // this is janky so come up with a better way to differentiate sounds from ambient
   bool isMicWaitElapsed = millis() - lastMicOSCSendMilliseconds > 50;
   if (isMicValueDifferent && isMicValueDifferentEnough && isMicWaitElapsed) {
     previousMicValue = micValue;
@@ -300,7 +296,7 @@ void loop() {
     // sendOSCMessage("/perfexmod/mic", micValue);
   }
 
-  // delay(100); // TODO adjust as needed
+//   // delay(100); // TODO adjust as needed
 
 }
 
