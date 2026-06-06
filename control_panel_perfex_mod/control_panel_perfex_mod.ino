@@ -86,7 +86,7 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 // Microphone (MAX9814): amazon.com/dp/B0B7SP6GYX
 #define PERFEXMOD_MICROPHONE_PIN 6
 
-// Speaker (MAX98357A): amazon.com/dp/B0B4GK5R1R
+// Speaker Amplifier (MAX98357A): amazon.com/dp/B0B4GK5R1R
 #define PERFEXMOD_SPEAKER_DIN_PIN 46
 #define PERFEXMOD_SPEAKER_BCLK_PIN 9
 #define PERFEXMOD_SPEAKER_LRC_PIN 10
@@ -139,7 +139,7 @@ const char* BUTTON_OSC_ADDRESSES[BUTTON_COUNT] = {
 };
 
 bool previousButtonStates[BUTTON_COUNT] = { false };
-int previousKnobSpeakerVolumeValue = -1;
+int previousknobValue = -1;
 
 bool isNormallyOpenButtonPressed(int buttonPin) {
   return digitalRead(buttonPin) == LOW;
@@ -220,6 +220,8 @@ void setup() {
 
 }
 
+unsigned long lastMicOSCSendMilliseconds = 0;
+
 bool hasPlayed = false;
 
 void loop() {
@@ -270,20 +272,35 @@ void loop() {
 //     // Serial.println(knobSpeakerVolumeValue);
 //     sendOSCMessage("/perfexmod/knob_1", knobSpeakerVolumeValue);
 //   }
+  
+  int rawKnobValue = analogRead(PERFEXMOD_KNOB_1_PIN);
+  // Serial.print("rawKnobValue: ");
+    // Serial.println(rawKnobValue);
+  int knobValue = constrain(map(rawKnobValue, 920, 4095, 0, 127), 0, 127);
+  bool isKnobValueDifferent = abs(knobValue - previousknobValue) > 5; // This jumps around a lot.
+  if (isKnobValueDifferent) {
+    previousknobValue = knobValue;
+    Serial.print("knobValue: ");
+    Serial.println(knobValue);
+    // sendOSCMessage("/perfexmod/knob_1", knobValue);
+  }
+  // PERFEXMOD_KNOB_1_PIN
 
-//   // MICROPHONE (MAX9814)
-//   int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
-//   // Serial.print("rawMicValue: ");
-//   // Serial.println(rawMicValue);
-//   int micValue = constrain(map(rawMicValue, 1000, 3000, 0, 127), 0, 127);
-//   if (micValue != previousMicValue) {
-//     previousMicValue = micValue;
-//     // Serial.print("micValue: ");
-//     // Serial.println(micValue);
-//     sendOSCMessage("/perfexmod/mic", micValue);
-//   }
+  // MICROPHONE (MAX9814)
+  int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
+  // Serial.print("rawMicValue: ");
+  // Serial.println(rawMicValue);
+  int micValue = constrain(map(rawMicValue, 1200, 3000, 0, 127), 0, 127);
+  bool isMicValueDifferent = micValue != previousMicValue;
+  bool isMicValueDifferentEnough = abs((micValue - previousMicValue) > 50); // this is janky so come up with a better way to differentiate sounds from ambient
+  bool isMicWaitElapsed = millis() - lastMicOSCSendMilliseconds > 50;
+  if (isMicValueDifferent && isMicValueDifferentEnough && isMicWaitElapsed) {
+    previousMicValue = micValue;
+    lastMicOSCSendMilliseconds = millis();
+    // sendOSCMessage("/perfexmod/mic", micValue);
+  }
 
-  // delay(10); // TODO adjust as needed
+  // delay(100); // TODO adjust as needed
 
 }
 
