@@ -45,7 +45,11 @@ In the Library Manager, search for and install the `Adafruit NeoPixel` library b
 
 ## Settings in Arduino IDE
 
-Set these settings, and double check them if you run into errors. Sometimes they flip back to default.
+`Tools` > `Board:` > `esp32` 
+
+`Tools` > `Port:` > Select the COM port available to you
+
+Then, set the below settings, and double check them if you run into errors. Sometimes they flip back to default.
 
 ### 1. Give the sketch more flash space to work with
 

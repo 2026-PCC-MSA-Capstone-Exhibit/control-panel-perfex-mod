@@ -52,10 +52,10 @@ Audio audio;
 
 
 // Onboard LED
-#define RGB_LED_PIN 48
-#define RGB_LED_COUNT 1
-#define RGB_LED_BRIGHTNESS 15
-Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
+#define ONBOARD_RGB_LED_PIN 48
+#define ONBOARD_RGB_LED_COUNT 1
+#define ONBOARD_RGB_LED_BRIGHTNESS 15
+Adafruit_NeoPixel onboardRGBLED(ONBOARD_RGB_LED_COUNT, ONBOARD_RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
 /* PERFEXMOD PIN ASSIGNMENTS */
 
@@ -75,6 +75,7 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 #define PERFEXMOD_BUTTON_5_PIN 8
 #define PERFEXMOD_BUTTON_C_PIN 47
 #define PERFEXMOD_BUTTON_D_PIN 21
+#define PERFEXMOD_BUTTON_E_PIN 3
 
 // LEDs
 #define PERFEXMOD_LED_1_PIN 15 // "Microphone" Indicator
@@ -99,13 +100,14 @@ Adafruit_NeoPixel onboardRGBLED(RGB_LED_COUNT, RGB_LED_PIN, NEO_GRB + NEO_KHZ800
 
 
 /* BUTTONS */
-const int BUTTON_COUNT = 9;
+const int BUTTON_COUNT = 10;
 
 const int BUTTON_PINS[BUTTON_COUNT] = {
   PERFEXMOD_BUTTON_A_PIN,
   PERFEXMOD_BUTTON_B_PIN,
   PERFEXMOD_BUTTON_C_PIN,
   PERFEXMOD_BUTTON_D_PIN,
+  PERFEXMOD_BUTTON_E_PIN,
   PERFEXMOD_BUTTON_1_PIN,
   PERFEXMOD_BUTTON_2_PIN,
   PERFEXMOD_BUTTON_3_PIN,
@@ -113,10 +115,11 @@ const int BUTTON_PINS[BUTTON_COUNT] = {
   PERFEXMOD_BUTTON_5_PIN
 };
 const bool IS_BUTTON_NORMALLY_OPEN[BUTTON_COUNT] = {
-  true, // BUTTON_A - Note: This switch maintains state
+  true,  // BUTTON_A - Note: This switch maintains state
   false, // BUTTON_B
   true,  // BUTTON_C
   false, // BUTTON_D
+  true,  // BUTTON_E
   false, // BUTTON_1
   false, // BUTTON_2
   false, // BUTTON_3
@@ -129,6 +132,7 @@ const char* BUTTON_OSC_ADDRESSES[BUTTON_COUNT] = {
   "/perfexmod/button_B",
   "/perfexmod/button_C",
   "/perfexmod/button_D",
+  "/perfexmod/button_E",
   "/perfexmod/button_1",
   "/perfexmod/button_2",
   "/perfexmod/button_3",
@@ -185,8 +189,6 @@ void setupSDCardReader() {
     return;
   }
   Serial.println("SD card mounted successfully! :)");
-  Serial.print("SD card type:" );
-  Serial.println(SD.cardType());
 
 }
 
@@ -205,7 +207,7 @@ void setup() {
   Serial.begin(115200);
 
   onboardRGBLED.begin();
-  onboardRGBLED.setBrightness(RGB_LED_BRIGHTNESS);
+  onboardRGBLED.setBrightness(ONBOARD_RGB_LED_BRIGHTNESS);
   onboardRGBLED.show();
 
   // Connect to WiFi
@@ -235,6 +237,11 @@ void setup() {
     pinMode(BUTTON_PINS[i], INPUT_PULLUP);
   }
 
+  pinMode(PERFEXMOD_LED_1_PIN, OUTPUT);
+  pinMode(PERFEXMOD_LED_2_PIN, OUTPUT);
+  pinMode(PERFEXMOD_LED_3_PIN, OUTPUT);
+  pinMode(PERFEXMOD_LED_4_PIN, OUTPUT);
+
 }
 
 unsigned long lastKnobOSCSendMilliseconds = 0;
@@ -257,6 +264,8 @@ void loop() {
 
   // BUTTONS
   for (int i = 0; i < BUTTON_COUNT; i++) {
+    bool isButtonA = i == 0;
+    bool isButtonD = i == 3;
     int buttonPin = BUTTON_PINS[i];
     bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
       ? isNormallyOpenButtonPressed(buttonPin)
@@ -272,12 +281,19 @@ void loop() {
       if (isPressed) {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
         sendOSCMessage(buttonOSCAddress, 1);
+        Serial.println(buttonOSCAddress);
         audio.connecttoFS(SD, "/wavsource_airplane_chime_x_standardized.wav");
-        // audio.connecttoFS(SD, "/wavsource_disconnect_911d_standardized.wav");
+        if (isButtonA) {
+          digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
+        } else if (isButtonD) {
+          audio.connecttoFS(SD, "/wavsource_disconnect_911d_standardized.wav");
+        }
       } else {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
         sendOSCMessage(buttonOSCAddress, 0);
-
+        if (isButtonA) {
+          digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
+        }
       }
       onboardRGBLED.show();
     }
@@ -288,7 +304,7 @@ void loop() {
   for (int i = 0; i < KNOB_COUNT; i++) {
     int rawKnobValue = analogRead(KNOB_PINS[i]);
     int knobValue = constrain(map(rawKnobValue, 0, 4095, 0, 127), 0, 127);
-    bool isKnobValueDifferent = abs(knobValue - previousKnobValues[i]) > 3;
+    bool isKnobValueDifferent = abs(knobValue - previousKnobValues[i]) > 4;
     if (isKnobValueDifferent && isKnobWaitElapsed) {
       previousKnobValues[i] = knobValue;
       const char* knobOSCAddress = KNOB_OSC_ADDRESSES[i];
