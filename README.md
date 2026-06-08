@@ -12,6 +12,9 @@ The main Arduino file is `control-panel-perfex-mod/control_panel_perfex_mod.ino`
 - Speaker Amplifier (MAX98357A): [Amazon link](https://amazon.com/dp/B0B4GK5R1R)
 - SD Card Reader: [Amazon Link](https://amazon.com/dp/B0BV8ZQ81F)
 
+ESP32-S3 Pin Diagram:
+![2026-06-08_Control_Panel_ESP32-S3_Pin_Diagram.png](Doc/2026-06-08_Control_Panel_ESP32-S3_Pin_Diagram.png)
+
 ## Installations/Dependencies
 
 ### Arduino
