@@ -203,9 +203,10 @@ void audio_eof_mp3(const char* info) {
 }
 
 // BUTTON: "VOICE RECORDER SWITCH"
-const int BUTTON_A_SOUND_LIBRARY_COUNT = 1;
+const int BUTTON_A_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_A_SOUND_LIBRARY[BUTTON_A_SOUND_LIBRARY_COUNT] = {
-  "/freesound_community-microphone-feedback-67484_edited.wav"
+  "/freesound_community-microphone-feedback-67484_edited-2.wav",
+  "/freesound_community-microphone-feedback-67484_edited-3.wav"
 };
 
 // BUTTON: "HOT SHOT ON"
@@ -241,7 +242,7 @@ const char* BUTTON_1_4_SOUND_LIBRARY[BUTTON_1_4_SOUND_LIBRARY_COUNT] = {
 const int BUTTON_5_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
   "/mixkit-microphone-hit-2181.wav",
-  "/mixkit-radio-waves-glitch-white-noise-1041.wav"
+  "/mixkit-radio-waves-glitch-white-noise-1041_edited.wav"
 };
 
 /* BUTTON E: CARD SLOT LED FLASHING BEHAVIOUR */
