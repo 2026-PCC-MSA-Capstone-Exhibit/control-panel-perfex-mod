@@ -170,8 +170,37 @@ const char* KNOB_OSC_ADDRESSES[KNOB_COUNT] = {
 int previousKnobValues[KNOB_COUNT] = { -1, -1, -1, -1 };
 int previousMicValue = -1;
 
+/* SD CARD & AUDIO */
+void setupSDCardReader() {
+  SPI.begin(PERFEXMOD_SD_CLK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
+  if (!SD.begin(PERFEXMOD_SD_CS_PIN)) {
+    Serial.println("SD card mount failed! :(");
+    return;
+  }
+  Serial.println("SD card mounted successfully! :)");
 
-/* AUDIO FILES (SOUND LIBRARIES FOR FEATURES) */
+}
+
+void setupAudio() {
+  audio.setPinout(PERFEXMOD_SPEAKER_BCLK_PIN, PERFEXMOD_SPEAKER_LRC_PIN, PERFEXMOD_SPEAKER_DIN_PIN);
+  audio.setVolume(15); // 0-21
+}
+
+void playAudioWAV(const char* filename) {
+  audio.connecttoFS(SD, filename);
+}
+
+/* SFX & AUDIO FILES */
+
+// BACKGROUND NOISE
+// Important: audio_eof_mp3 is a specific hook for the ESP32-audioI2S library. It calls audio_eof_mp3() automatically whenever an audio clip ends.
+const char* BACKGROUND_WHITE_NOISE_AUDIO_WAV = "/freesound_community-am-radio-static-60183_edited.wav";
+bool shouldPlayBackgroundWhiteNoise = true;
+void audio_eof_mp3(const char* info) {
+  if (shouldPlayBackgroundWhiteNoise) {
+    playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
+  }
+}
 
 // BUTTON: "VOICE RECORDER SWITCH"
 const int BUTTON_A_SOUND_LIBRARY_COUNT = 1;
@@ -209,12 +238,13 @@ const char* BUTTON_1_4_SOUND_LIBRARY[BUTTON_1_4_SOUND_LIBRARY_COUNT] = {
 };
 
 // BUTTON: 5, "IC (INTERCOM)" of "TRANSMITTER SWITCHES"
-const int BUTTON_5_SOUND_LIBRARY_COUNT = 1;
+const int BUTTON_5_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
-  "/mixkit-microphone-hit-2181.wav"
+  "/mixkit-microphone-hit-2181.wav",
+  "/mixkit-radio-waves-glitch-white-noise-1041.wav"
 };
 
-/* Card Slot Flashing Behaviour */
+/* BUTTON E: CARD SLOT LED FLASHING BEHAVIOUR */
 const int FLASH_LED_PINS[3] = {
   PERFEXMOD_LED_2_PIN,  // Red
   PERFEXMOD_LED_3_PIN,  // Yellow
@@ -243,27 +273,6 @@ void sendOSCMessage(const char* address, int value) {
   msg.send(udp);
   udp.endPacket();
   msg.empty();
-}
-
-
-/* SD Card and Audio */
-void setupSDCardReader() {
-  SPI.begin(PERFEXMOD_SD_CLK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
-  if (!SD.begin(PERFEXMOD_SD_CS_PIN)) {
-    Serial.println("SD card mount failed! :(");
-    return;
-  }
-  Serial.println("SD card mounted successfully! :)");
-
-}
-
-void setupAudio() {
-  audio.setPinout(PERFEXMOD_SPEAKER_BCLK_PIN, PERFEXMOD_SPEAKER_LRC_PIN, PERFEXMOD_SPEAKER_DIN_PIN);
-  audio.setVolume(15); // 0-21
-}
-
-void playAudioWAV(const char* filename) {
-  audio.connecttoFS(SD, filename);
 }
 
 void serialPrintOSCData(const char* oscAddress, int value) {
@@ -298,6 +307,8 @@ void setup() {
 
   setupSDCardReader();
   setupAudio();
+  audio.connecttoFS(SD, BACKGROUND_WHITE_NOISE_AUDIO_WAV);
+
 
 //   Serial.print("Free heap: ");
 //   Serial.println(ESP.getFreeHeap());
@@ -348,24 +359,24 @@ void loop() {
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
           int randomIndexA = random(BUTTON_A_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_A_SOUND_LIBRARY[randomIndexA]);
+          playAudioWAV(BUTTON_A_SOUND_LIBRARY[randomIndexA]);
         } else if (isButtonB) {
           int randomIndexB = random(BUTTON_B_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_B_SOUND_LIBRARY[randomIndexB]);
+          playAudioWAV(BUTTON_B_SOUND_LIBRARY[randomIndexB]);
         } else if (isButtonC) {
           int randomIndexC = random(BUTTON_C_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_C_SOUND_LIBRARY[randomIndexC]);
+          playAudioWAV(BUTTON_C_SOUND_LIBRARY[randomIndexC]);
         } else if (isButtonD) {
           int randomIndexD = random(BUTTON_D_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_D_SOUND_LIBRARY[randomIndexD]);
+          playAudioWAV(BUTTON_D_SOUND_LIBRARY[randomIndexD]);
         } else if (isButtonE) {
           int randomIndexE = random(BUTTON_E_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_E_SOUND_LIBRARY[randomIndexE]);
+          playAudioWAV(BUTTON_E_SOUND_LIBRARY[randomIndexE]);
           startCardSlotFlashLEDSequence();
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
-          int randomIndexE = random(BUTTON_5_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, "/mixkit-radio-waves-glitch-white-noise-1041.wav");
+          int randomIndex5 = random(BUTTON_5_SOUND_LIBRARY_COUNT);
+          playAudioWAV(BUTTON_5_SOUND_LIBRARY[randomIndex5]);
         } else {
           
         }
@@ -374,6 +385,8 @@ void loop() {
         sendOSCMessage(buttonOSCAddress, 0);
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
+          audio.stopSong();
+          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
         } else if (isButtonE) {
           isCardSlotFlashLEDSequenceActive = false;
           currentCardSlotFlashLEDSequenceColorIndex = -1;
@@ -384,6 +397,7 @@ void loop() {
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
           audio.stopSong();
+          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
         }
       }
       onboardRGBLED.show();
@@ -411,9 +425,9 @@ void loop() {
       bool isFinalCardSlotFlashLEDStepColorRed = currentCardSlotFlashLEDSequenceColorIndex == 0;
       bool isFinalCardSlotFlashLEDStepColorGreen = currentCardSlotFlashLEDSequenceColorIndex == 2;
       if (isFinalCardSlotFlashLEDStepColorRed) {
-        audio.connecttoFS(SD, "/mixkit-system-beep-buzzer-fail-2964.wav");
+        playAudioWAV("/mixkit-system-beep-buzzer-fail-2964.wav");
       } else if (isFinalCardSlotFlashLEDStepColorGreen) {
-        audio.connecttoFS(SD, "/mixkit-access-allowed-tone-2869_edited.wav");
+        playAudioWAV("/mixkit-access-allowed-tone-2869_edited.wav");
       }
     }
     }
