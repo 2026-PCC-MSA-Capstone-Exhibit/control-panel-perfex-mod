@@ -66,22 +66,22 @@ Adafruit_NeoPixel onboardRGBLED(ONBOARD_RGB_LED_COUNT, ONBOARD_RGB_LED_PIN, NEO_
 #define PERFEXMOD_KNOB_4_PIN 2
 
 // Buttons
-#define PERFEXMOD_BUTTON_A_PIN 42
-#define PERFEXMOD_BUTTON_B_PIN 41
-#define PERFEXMOD_BUTTON_1_PIN 40
-#define PERFEXMOD_BUTTON_2_PIN 39
-#define PERFEXMOD_BUTTON_3_PIN 38
-#define PERFEXMOD_BUTTON_4_PIN 7
-#define PERFEXMOD_BUTTON_5_PIN 8
-#define PERFEXMOD_BUTTON_C_PIN 47
-#define PERFEXMOD_BUTTON_D_PIN 21
-#define PERFEXMOD_BUTTON_E_PIN 3
+#define PERFEXMOD_BUTTON_A_PIN 42 // "VOICE RECORDER SWITCH"
+#define PERFEXMOD_BUTTON_B_PIN 41 // "HOT SHOT ON"
+#define PERFEXMOD_BUTTON_1_PIN 40 // "1" of "TRANSMITTER SWITCHES"
+#define PERFEXMOD_BUTTON_2_PIN 39 // "2" of "TRANSMITTER SWITCHES"
+#define PERFEXMOD_BUTTON_3_PIN 38 // "3" of "TRANSMITTER SWITCHES"
+#define PERFEXMOD_BUTTON_4_PIN 7 // "4" of "TRANSMITTER SWITCHES"
+#define PERFEXMOD_BUTTON_5_PIN 8 // "IC" of "TRANSMITTER SWITCHES"
+#define PERFEXMOD_BUTTON_C_PIN 47 // "TONE"
+#define PERFEXMOD_BUTTON_D_PIN 21 // "ALARM ON"
+#define PERFEXMOD_BUTTON_E_PIN 3 // "CARD SLOT"
 
 // LEDs
-#define PERFEXMOD_LED_1_PIN 15 // "Microphone" Indicator
-#define PERFEXMOD_LED_2_PIN 16 // Red light
-#define PERFEXMOD_LED_3_PIN 17 // Yellow light
-#define PERFEXMOD_LED_4_PIN 18 // Green Light
+#define PERFEXMOD_LED_1_PIN 15 // "MICROPHONE" Indicator
+#define PERFEXMOD_LED_2_PIN 16 // Red light next to "CARD SLOT"
+#define PERFEXMOD_LED_3_PIN 17 // Yellow light next to "CARD SLOT"
+#define PERFEXMOD_LED_4_PIN 18 // Green Light next to "CARD SLOT"
 
 // Microphone (MAX9814): amazon.com/dp/B0B7SP6GYX
 #define PERFEXMOD_MICROPHONE_PIN 6
@@ -168,10 +168,51 @@ const char* KNOB_OSC_ADDRESSES[KNOB_COUNT] = {
 };
 
 int previousKnobValues[KNOB_COUNT] = { -1, -1, -1, -1 };
-
-
 int previousMicValue = -1;
 
+/* AUDIO FILES (SOUND LIBRARIES FOR FEATURES) */
+
+// BUTTON: "VOICE RECORDER SWITCH"
+const int BUTTON_A_SOUND_LIBRARY_COUNT = 3;
+const char* BUTTON_A_SOUND_LIBRARY[BUTTON_A_SOUND_LIBRARY_COUNT] = {
+  "/freesound_community-microphone-feedback-67484_edited.wav",
+  "/freesound_community-strange-feedback-104068_edited.wav",
+  "/mixkit-microphone-hit-2181.wav"
+};
+
+// BUTTON: "HOT SHOT ON"
+const int BUTTON_B_SOUND_LIBRARY_COUNT = 1;
+const char* BUTTON_B_SOUND_LIBRARY[BUTTON_B_SOUND_LIBRARY_COUNT] = {
+  "/wavsource-disconnect-911d.wav"
+};
+
+// BUTTON: "TONE"
+const int BUTTON_C_SOUND_LIBRARY_COUNT = 1;
+const char* BUTTON_C_SOUND_LIBRARY[BUTTON_C_SOUND_LIBRARY_COUNT] = {
+  "/mixkit-dial-phone-tone-2862_edited-2sec.wav"
+};
+
+// BUTTON: "ALARM ON"
+const int BUTTON_D_SOUND_LIBRARY_COUNT = 1;
+const char* BUTTON_D_SOUND_LIBRARY[BUTTON_D_SOUND_LIBRARY_COUNT] = {
+  "/mixkit-classic-alarm-995.wav"
+};
+
+// BUTTON: "CARD SLOT" physical input
+const int BUTTON_E_SOUND_LIBRARY_COUNT = 1;
+const char* BUTTON_E_SOUND_LIBRARY[BUTTON_E_SOUND_LIBRARY_COUNT] = {
+  "/mixkit-shop-scanner-beeps-1073_edited-single.wav"
+};
+
+// BUTTON: "1-4" of "TRANSMITTER SWITCHES"
+const int BUTTON_1_4_SOUND_LIBRARY_COUNT = 0;
+const char* BUTTON_1_4_SOUND_LIBRARY[BUTTON_1_4_SOUND_LIBRARY_COUNT] = {
+};
+
+// BUTTON: "IC (INTERCOM)" of "TRANSMITTER SWITCHES"
+const int BUTTON_5_SOUND_LIBRARY_COUNT = 0;
+const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
+};
 
 void sendOSCMessage(const char* address, int value) {
   OSCMessage msg(address);
@@ -247,25 +288,22 @@ void setup() {
 unsigned long lastKnobOSCSendMilliseconds = 0;
 unsigned long lastMicOSCSendMilliseconds = 0;
 
-// bool hasAudioPlayed = false; // For testing one-off audio playback
-
 void loop() {
 
   audio.loop();
 
-  // For testing one-off audio playback
-  // if (!hasAudioPlayed) {
-  //   Serial.println(SD.exists("/wavsource_disconnect_911d_standardized.wav") ? "File found" : "File NOT found");
-  //   bool started = audio.connecttoFS(SD, "/wavsource_disconnect_911d_standardized.wav");
-  //   Serial.println(started ? "Playback started" : "Playback FAILED");
-  //   hasAudioPlayed = true;
-  // }
-
-
   // BUTTONS
   for (int i = 0; i < BUTTON_COUNT; i++) {
     bool isButtonA = i == 0;
+    bool isButtonB = i == 1;
+    bool isButtonC = i == 2;
     bool isButtonD = i == 3;
+    bool isButtonE = i == 4;
+    bool isButton1 = i == 5;
+    bool isButton2 = i == 6;
+    bool isButton3 = i == 7;
+    bool isButton4 = i == 8;
+    bool isButton5 = i == 9;
     int buttonPin = BUTTON_PINS[i];
     bool isPressed = IS_BUTTON_NORMALLY_OPEN[i]
       ? isNormallyOpenButtonPressed(buttonPin)
@@ -282,16 +320,33 @@ void loop() {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
         sendOSCMessage(buttonOSCAddress, 1);
         Serial.println(buttonOSCAddress);
-        audio.connecttoFS(SD, "/wavsource_airplane_chime_x_standardized.wav");
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
+          int randomIndexA = random(BUTTON_A_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_A_SOUND_LIBRARY[randomIndexA]);
+        } else if (isButtonB) {
+          int randomIndexB = random(BUTTON_B_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_B_SOUND_LIBRARY[randomIndexB]);
+        } else if (isButtonC) {
+          int randomIndexC = random(BUTTON_C_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_C_SOUND_LIBRARY[randomIndexC]);
         } else if (isButtonD) {
-          audio.connecttoFS(SD, "/wavsource_disconnect_911d_standardized.wav");
+          int randomIndexD = random(BUTTON_D_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_D_SOUND_LIBRARY[randomIndexD]);
+        } else if (isButtonE) {
+          int randomIndexE = random(BUTTON_E_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_E_SOUND_LIBRARY[randomIndexE]);
+        } else if (isButton5) {
+          digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
+        } else {
+          
         }
       } else {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
         sendOSCMessage(buttonOSCAddress, 0);
         if (isButtonA) {
+          digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
+        } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
         }
       }
