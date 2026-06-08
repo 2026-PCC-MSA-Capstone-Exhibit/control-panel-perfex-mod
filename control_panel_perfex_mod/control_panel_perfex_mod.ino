@@ -168,7 +168,13 @@ const char* KNOB_OSC_ADDRESSES[KNOB_COUNT] = {
 };
 
 int previousKnobValues[KNOB_COUNT] = { -1, -1, -1, -1 };
-int previousMicValue = -1;
+
+/* MICROPHONE HANDLING (MAX9814) */
+unsigned long micWindowStartMilliseconds = 0;
+int rawMicSignalMax = 0;
+int rawMicSignalMin = 4095;
+int previousmicValue = -1;
+const unsigned long MIC_WINDOW_MILLISECONDS = 50;
 
 /* SD CARD & AUDIO */
 void setupSDCardReader() {
@@ -193,14 +199,7 @@ void playAudioWAV(const char* filename) {
 /* SFX & AUDIO FILES */
 
 // BACKGROUND NOISE
-// Important: audio_eof_mp3 is a specific hook for the ESP32-audioI2S library. It calls audio_eof_mp3() automatically whenever an audio clip ends.
 const char* BACKGROUND_WHITE_NOISE_AUDIO_WAV = "/freesound_community-am-radio-static-60183_edited.wav";
-bool shouldPlayBackgroundWhiteNoise = true;
-void audio_eof_mp3(const char* info) {
-  if (shouldPlayBackgroundWhiteNoise) {
-    playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
-  }
-}
 
 // BUTTON: "VOICE RECORDER SWITCH"
 const int BUTTON_A_SOUND_LIBRARY_COUNT = 2;
@@ -331,6 +330,10 @@ void loop() {
 
   audio.loop();
 
+  if (!audio.isRunning()) {
+    playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
+  }
+
   // BUTTONS
   for (int i = 0; i < BUTTON_COUNT; i++) {
     bool isButtonA = i == 0;
@@ -372,30 +375,41 @@ void loop() {
           int randomIndexE = random(BUTTON_E_SOUND_LIBRARY_COUNT);
           playAudioWAV(BUTTON_E_SOUND_LIBRARY[randomIndexE]);
           startCardSlotFlashLEDSequence();
+        } else if (isButton1) {
+          // TODO
+        } else if (isButton2) {
+          // TODO
+        } else if (isButton3) {
+          // TODO
+        } else if (isButton4) {
+          // TODO
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
           int randomIndex5 = random(BUTTON_5_SOUND_LIBRARY_COUNT);
           playAudioWAV(BUTTON_5_SOUND_LIBRARY[randomIndex5]);
-        } else {
-          
         }
-      } else {        
+      } else { // Button is released
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
         sendOSCMessage(buttonOSCAddress, 0);
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
           audio.stopSong();
+        } else if (isButtonB) {
+          // TODO
+        } else if (isButtonC) {
+          // TODO
+        } else if (isButtonD) {
+          // TODO
         } else if (isButtonE) {
           isCardSlotFlashLEDSequenceActive = false;
           currentCardSlotFlashLEDSequenceColorIndex = -1;
           digitalWrite(PERFEXMOD_LED_2_PIN, LOW);
           digitalWrite(PERFEXMOD_LED_3_PIN, LOW);
-          digitalWrite(PERFEXMOD_LED_4_PIN, LOW);       
+          digitalWrite(PERFEXMOD_LED_4_PIN, LOW);     
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
-          audio.stopSong();          
-        }
-        playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
+          audio.stopSong();
+        }        
       }
       onboardRGBLED.show();
     }
@@ -451,14 +465,23 @@ void loop() {
   int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
   // Serial.print("rawMicValue: ");
   // Serial.println(rawMicValue);
-  int micValue = constrain(map(rawMicValue, 1200, 3000, 0, 127), 0, 127);
-  bool isMicValueDifferent = micValue != previousMicValue;
-  bool isMicValueDifferentEnough = abs((micValue - previousMicValue)) > 50; // this is janky so come up with a better way to differentiate sounds from ambient
-  bool isMicUpdateWaitElapsed = millis() - lastMicOSCSendMilliseconds > 50;
-  if (isMicValueDifferent && isMicValueDifferentEnough && isMicUpdateWaitElapsed) {
-    previousMicValue = micValue;
-    lastMicOSCSendMilliseconds = millis();
-    // sendOSCMessage("/perfexmod/mic", micValue);
-  }
+  // delay(100);
+  // if (rawMicValue > rawMicSignalMax) rawMicSignalMax = rawMicValue;
+  // if (rawMicValue < rawMicSignalMin) rawMicSignalMin = rawMicValue;
+  // if (millis() - micWindowStartMilliseconds > MIC_WINDOW_MILLISECONDS) {
+  //   int rawMicValuePeakToPeak = rawMicSignalMax - rawMicSignalMin;
+  //   int micValue = constrain(map(rawMicValuePeakToPeak, 0, 2000, 0, 127), 0, 127);
+
+  //   if (abs(micValue - previousmicValue) > 3) {
+  //     previousmicValue = micValue;
+  //     sendOSCMessage("/perfexmod/mic", micValue);
+  //     serialPrintOSCData("/perfexmod/mic", micValue);
+  //   }
+
+  //   // Reset the Mic Window
+  //   micWindowStartMilliseconds = millis();
+  //   rawMicSignalMax = 0;
+  //   rawMicSignalMin = 4095;
+  // }
 
 }
