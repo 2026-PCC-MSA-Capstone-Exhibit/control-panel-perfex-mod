@@ -251,12 +251,10 @@ const int FLASH_LED_PINS[3] = {
   PERFEXMOD_LED_3_PIN,  // Yellow
   PERFEXMOD_LED_4_PIN   // Green
 };
-
 bool isCardSlotFlashLEDSequenceActive = false;
 int cardSlotFlashLEDStepNumber = 0;
 unsigned long cardSlotFlashLEDStepNumberStartMilliseconds = 0;
 int currentCardSlotFlashLEDSequenceColorIndex = -1;
-
 void startCardSlotFlashLEDSequence() {
   isCardSlotFlashLEDSequenceActive = true;
   cardSlotFlashLEDStepNumber = 0;
@@ -382,23 +380,21 @@ void loop() {
           
         }
       } else {
+        playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(0, 0, 0));
         sendOSCMessage(buttonOSCAddress, 0);
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
           audio.stopSong();
-          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
         } else if (isButtonE) {
           isCardSlotFlashLEDSequenceActive = false;
           currentCardSlotFlashLEDSequenceColorIndex = -1;
           digitalWrite(PERFEXMOD_LED_2_PIN, LOW);
           digitalWrite(PERFEXMOD_LED_3_PIN, LOW);
-          digitalWrite(PERFEXMOD_LED_4_PIN, LOW);
-          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);          
+          digitalWrite(PERFEXMOD_LED_4_PIN, LOW);       
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
-          audio.stopSong();
-          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);
+          audio.stopSong();          
         }
       }
       onboardRGBLED.show();
