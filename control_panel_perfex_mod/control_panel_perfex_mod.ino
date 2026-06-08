@@ -174,10 +174,9 @@ int previousMicValue = -1;
 /* AUDIO FILES (SOUND LIBRARIES FOR FEATURES) */
 
 // BUTTON: "VOICE RECORDER SWITCH"
-const int BUTTON_A_SOUND_LIBRARY_COUNT = 2;
+const int BUTTON_A_SOUND_LIBRARY_COUNT = 1;
 const char* BUTTON_A_SOUND_LIBRARY[BUTTON_A_SOUND_LIBRARY_COUNT] = {
-  "/freesound_community-microphone-feedback-67484_edited.wav",
-  "/freesound_community-strange-feedback-104068_edited.wav",
+  "/freesound_community-microphone-feedback-67484_edited.wav"
 };
 
 // BUTTON: "HOT SHOT ON"
@@ -204,14 +203,15 @@ const char* BUTTON_E_SOUND_LIBRARY[BUTTON_E_SOUND_LIBRARY_COUNT] = {
   "/mixkit-shop-scanner-beeps-1073_edited-single.wav"
 };
 
-// BUTTON: "1-4" of "TRANSMITTER SWITCHES"
+// BUTTON: "1", "2", "3", "4" of "TRANSMITTER SWITCHES"
 const int BUTTON_1_4_SOUND_LIBRARY_COUNT = 0;
 const char* BUTTON_1_4_SOUND_LIBRARY[BUTTON_1_4_SOUND_LIBRARY_COUNT] = {
 };
 
-// BUTTON: "IC (INTERCOM)" of "TRANSMITTER SWITCHES"
-const int BUTTON_5_SOUND_LIBRARY_COUNT = 0;
+// BUTTON: 5, "IC (INTERCOM)" of "TRANSMITTER SWITCHES"
+const int BUTTON_5_SOUND_LIBRARY_COUNT = 1;
 const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
+  "/mixkit-microphone-hit-2181.wav"
 };
 
 /* Card Slot Flashing Behaviour */
@@ -265,6 +265,12 @@ void setupAudio() {
 
 void playAudioWAV(const char* filename) {
   audio.connecttoFS(SD, filename);
+}
+
+void serialPrintOSCData(const char* oscAddress, int value) {
+  Serial.print(oscAddress);
+  Serial.print(" ");
+  Serial.println(value);
 }
 
 
@@ -335,15 +341,11 @@ void loop() {
     bool previousButtonState = previousButtonStates[i];
     if (isPressed != previousButtonState) {
       const char* buttonOSCAddress = BUTTON_OSC_ADDRESSES[i];
-      Serial.print("isPressed: ");
-      Serial.print(buttonOSCAddress);
-      Serial.print(" ");
-      Serial.println(isPressed);
+      serialPrintOSCData(buttonOSCAddress, isPressed);
       previousButtonStates[i] = isPressed;
       if (isPressed) {
         onboardRGBLED.setPixelColor(0, onboardRGBLED.Color(255, 255, 255));
         sendOSCMessage(buttonOSCAddress, 1);
-        Serial.println(buttonOSCAddress);
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
           int randomIndexA = random(BUTTON_A_SOUND_LIBRARY_COUNT);
@@ -363,6 +365,8 @@ void loop() {
           startCardSlotFlashLEDSequence();
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
+          int randomIndexE = random(BUTTON_5_SOUND_LIBRARY_COUNT);
+          audio.connecttoFS(SD, BUTTON_5_SOUND_LIBRARY[randomIndexE]);
         } else {
           
         }
@@ -390,7 +394,7 @@ void loop() {
   if (isCardSlotFlashLEDSequenceActive) {
     const int CARD_SLOT_FLASH_STEP_TOTAL_COUNT = 8;
     const unsigned long FLASH_QUICK_DURATION_MILLISECONDS = 180;
-    bool isFinalCardSlotFlashLEDStep = (cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1);
+    bool isFinalCardSlotFlashLEDStep = cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1;
 
     bool isCardSlotFlashLEDSequenceReadyForNextFlashStep = millis() - cardSlotFlashLEDStepNumberStartMilliseconds > FLASH_QUICK_DURATION_MILLISECONDS;
     if (!isFinalCardSlotFlashLEDStep && isCardSlotFlashLEDSequenceReadyForNextFlashStep) {
@@ -401,6 +405,14 @@ void loop() {
       currentCardSlotFlashLEDSequenceColorIndex = random(3);
       digitalWrite(FLASH_LED_PINS[currentCardSlotFlashLEDSequenceColorIndex], HIGH);
       cardSlotFlashLEDStepNumberStartMilliseconds = millis();
+
+      isFinalCardSlotFlashLEDStep = cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1;
+      if (isFinalCardSlotFlashLEDStep) {
+      bool isFinalCardSlotFlashLEDStepColorRed = currentCardSlotFlashLEDSequenceColorIndex == 0;
+      if (isFinalCardSlotFlashLEDStepColorRed) {
+        audio.connecttoFS(SD, "/mixkit-system-beep-buzzer-fail-2964.wav");
+      }
+    }
     }
   }
 
@@ -414,9 +426,7 @@ void loop() {
       previousKnobValues[i] = knobValue;
       const char* knobOSCAddress = KNOB_OSC_ADDRESSES[i];
       sendOSCMessage(knobOSCAddress, knobValue);
-      Serial.print(knobOSCAddress);
-      Serial.print(" ");
-      Serial.println(knobValue);
+      serialPrintOSCData(knobOSCAddress, knobValue);
     }
   }
 
