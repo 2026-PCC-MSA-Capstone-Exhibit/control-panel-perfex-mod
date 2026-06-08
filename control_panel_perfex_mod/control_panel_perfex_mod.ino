@@ -258,7 +258,6 @@ void setupSDCardReader() {
 }
 
 void setupAudio() {
-  // audio.setBufsize(4096, 4096); // Limit 4KB allocation towards the input buffer (reading from SD card) and output buffer (sending to MAX98357A).
   audio.setPinout(PERFEXMOD_SPEAKER_BCLK_PIN, PERFEXMOD_SPEAKER_LRC_PIN, PERFEXMOD_SPEAKER_DIN_PIN);
   audio.setVolume(15); // 0-21
 }
@@ -366,7 +365,7 @@ void loop() {
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
           int randomIndexE = random(BUTTON_5_SOUND_LIBRARY_COUNT);
-          audio.connecttoFS(SD, BUTTON_5_SOUND_LIBRARY[randomIndexE]);
+          audio.connecttoFS(SD, "/mixkit-radio-waves-glitch-white-noise-1041.wav");
         } else {
           
         }
@@ -384,6 +383,7 @@ void loop() {
           
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
+          audio.stopSong();
         }
       }
       onboardRGBLED.show();
