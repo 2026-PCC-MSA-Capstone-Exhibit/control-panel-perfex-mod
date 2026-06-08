@@ -170,14 +170,14 @@ const char* KNOB_OSC_ADDRESSES[KNOB_COUNT] = {
 int previousKnobValues[KNOB_COUNT] = { -1, -1, -1, -1 };
 int previousMicValue = -1;
 
+
 /* AUDIO FILES (SOUND LIBRARIES FOR FEATURES) */
 
 // BUTTON: "VOICE RECORDER SWITCH"
-const int BUTTON_A_SOUND_LIBRARY_COUNT = 3;
+const int BUTTON_A_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_A_SOUND_LIBRARY[BUTTON_A_SOUND_LIBRARY_COUNT] = {
   "/freesound_community-microphone-feedback-67484_edited.wav",
   "/freesound_community-strange-feedback-104068_edited.wav",
-  "/mixkit-microphone-hit-2181.wav"
 };
 
 // BUTTON: "HOT SHOT ON"
@@ -214,6 +214,28 @@ const int BUTTON_5_SOUND_LIBRARY_COUNT = 0;
 const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
 };
 
+/* Card Slot Flashing Behaviour */
+const int FLASH_LED_PINS[3] = {
+  PERFEXMOD_LED_2_PIN,  // Red
+  PERFEXMOD_LED_3_PIN,  // Yellow
+  PERFEXMOD_LED_4_PIN   // Green
+};
+
+bool isCardSlotFlashLEDSequenceActive = false;
+int cardSlotFlashLEDStepNumber = 0;
+unsigned long cardSlotFlashLEDStepNumberStartMilliseconds = 0;
+int currentCardSlotFlashLEDSequenceColorIndex = -1;
+
+void startCardSlotFlashLEDSequence() {
+  isCardSlotFlashLEDSequenceActive = true;
+  cardSlotFlashLEDStepNumber = 0;
+  cardSlotFlashLEDStepNumberStartMilliseconds = millis();
+  currentCardSlotFlashLEDSequenceColorIndex = random(3);
+  digitalWrite(FLASH_LED_PINS[currentCardSlotFlashLEDSequenceColorIndex], HIGH);
+}
+
+/* OSC Broadcasting */
+
 void sendOSCMessage(const char* address, int value) {
   OSCMessage msg(address);
   msg.add(value);
@@ -223,6 +245,8 @@ void sendOSCMessage(const char* address, int value) {
   msg.empty();
 }
 
+
+/* SD Card and Audio */
 void setupSDCardReader() {
   SPI.begin(PERFEXMOD_SD_CLK_PIN, PERFEXMOD_SD_MISO_PIN, PERFEXMOD_SD_MOSI_PIN, PERFEXMOD_SD_CS_PIN);
   if (!SD.begin(PERFEXMOD_SD_CS_PIN)) {
@@ -336,6 +360,7 @@ void loop() {
         } else if (isButtonE) {
           int randomIndexE = random(BUTTON_E_SOUND_LIBRARY_COUNT);
           audio.connecttoFS(SD, BUTTON_E_SOUND_LIBRARY[randomIndexE]);
+          startCardSlotFlashLEDSequence();
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
         } else {
@@ -346,11 +371,36 @@ void loop() {
         sendOSCMessage(buttonOSCAddress, 0);
         if (isButtonA) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
+        } else if (isButtonE) {
+          isCardSlotFlashLEDSequenceActive = false;
+          currentCardSlotFlashLEDSequenceColorIndex = -1;
+          digitalWrite(PERFEXMOD_LED_2_PIN, LOW);
+          digitalWrite(PERFEXMOD_LED_3_PIN, LOW);
+          digitalWrite(PERFEXMOD_LED_4_PIN, LOW);
+          
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
         }
       }
       onboardRGBLED.show();
+    }
+  }
+
+  // FLASH SEQUENCE
+  if (isCardSlotFlashLEDSequenceActive) {
+    const int CARD_SLOT_FLASH_STEP_TOTAL_COUNT = 8;
+    const unsigned long FLASH_QUICK_DURATION_MILLISECONDS = 180;
+    bool isFinalCardSlotFlashLEDStep = (cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1);
+
+    bool isCardSlotFlashLEDSequenceReadyForNextFlashStep = millis() - cardSlotFlashLEDStepNumberStartMilliseconds > FLASH_QUICK_DURATION_MILLISECONDS;
+    if (!isFinalCardSlotFlashLEDStep && isCardSlotFlashLEDSequenceReadyForNextFlashStep) {
+      if (currentCardSlotFlashLEDSequenceColorIndex >= 0) {
+        digitalWrite(FLASH_LED_PINS[currentCardSlotFlashLEDSequenceColorIndex], LOW);
+      }
+      cardSlotFlashLEDStepNumber++;
+      currentCardSlotFlashLEDSequenceColorIndex = random(3);
+      digitalWrite(FLASH_LED_PINS[currentCardSlotFlashLEDSequenceColorIndex], HIGH);
+      cardSlotFlashLEDStepNumberStartMilliseconds = millis();
     }
   }
 
