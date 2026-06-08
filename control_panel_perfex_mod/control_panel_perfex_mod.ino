@@ -245,16 +245,6 @@ const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
   "/mixkit-radio-waves-glitch-white-noise-1041_edited.wav"
 };
 
-/* KNOBS */
-const int KNOB_SOUND_LIBRARY_COUNT = 5;
-const char* KNOB_SOUND_LIBRARY[KNOB_SOUND_LIBRARY_COUNT] = {
-  "/freesound_community-robot-knob-97957_edited-with-bg-whitenoise-01.wav",
-  "/freesound_community-robot-knob-97957_edited-with-bg-whitenoise-02.wav",
-  "/freesound_community-robot-knob-97957_edited-with-bg-whitenoise-03.wav",
-  "/freesound_community-robot-knob-97957_edited-with-bg-whitenoise-04.wav",
-  "/freesound_community-robot-knob-97957_edited-with-bg-whitenoise-05.wav"
-};
-
 /* BUTTON E: CARD SLOT LED FLASHING BEHAVIOUR */
 const int FLASH_LED_PINS[3] = {
   PERFEXMOD_LED_2_PIN,  // Red
@@ -450,8 +440,6 @@ void loop() {
     int knobValue = constrain(map(rawKnobValue, 0, 4095, 0, 127), 0, 127);
     bool isKnobValueDifferent = abs(knobValue - previousKnobValues[i]) > 4;
     if (isKnobValueDifferent && isKnobWaitElapsed) {
-      int randomIndexKnob = random(KNOB_SOUND_LIBRARY_COUNT);
-      playAudioWAV(KNOB_SOUND_LIBRARY[randomIndexKnob]);
       previousKnobValues[i] = knobValue;
       const char* knobOSCAddress = KNOB_OSC_ADDRESSES[i];
       sendOSCMessage(knobOSCAddress, knobValue);
