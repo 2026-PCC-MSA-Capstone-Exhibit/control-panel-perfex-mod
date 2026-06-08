@@ -394,7 +394,7 @@ void loop() {
           digitalWrite(PERFEXMOD_LED_2_PIN, LOW);
           digitalWrite(PERFEXMOD_LED_3_PIN, LOW);
           digitalWrite(PERFEXMOD_LED_4_PIN, LOW);
-          
+          playAudioWAV(BACKGROUND_WHITE_NOISE_AUDIO_WAV);          
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, LOW);
           audio.stopSong();
