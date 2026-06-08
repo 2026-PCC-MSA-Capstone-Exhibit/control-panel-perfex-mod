@@ -409,8 +409,11 @@ void loop() {
       isFinalCardSlotFlashLEDStep = cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1;
       if (isFinalCardSlotFlashLEDStep) {
       bool isFinalCardSlotFlashLEDStepColorRed = currentCardSlotFlashLEDSequenceColorIndex == 0;
+      bool isFinalCardSlotFlashLEDStepColorGreen = currentCardSlotFlashLEDSequenceColorIndex == 2;
       if (isFinalCardSlotFlashLEDStepColorRed) {
         audio.connecttoFS(SD, "/mixkit-system-beep-buzzer-fail-2964.wav");
+      } else if (isFinalCardSlotFlashLEDStepColorGreen) {
+        audio.connecttoFS(SD, "/mixkit-access-allowed-tone-2869_edited.wav");
       }
     }
     }
