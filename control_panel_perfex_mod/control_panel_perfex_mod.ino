@@ -424,9 +424,12 @@ void loop() {
       isFinalCardSlotFlashLEDStep = cardSlotFlashLEDStepNumber == CARD_SLOT_FLASH_STEP_TOTAL_COUNT - 1;
       if (isFinalCardSlotFlashLEDStep) {
       bool isFinalCardSlotFlashLEDStepColorRed = currentCardSlotFlashLEDSequenceColorIndex == 0;
+      bool isFinalCardSlotFlashLEDStepColorYellow = currentCardSlotFlashLEDSequenceColorIndex == 1;
       bool isFinalCardSlotFlashLEDStepColorGreen = currentCardSlotFlashLEDSequenceColorIndex == 2;
       if (isFinalCardSlotFlashLEDStepColorRed) {
         playAudioWAV("/mixkit-system-beep-buzzer-fail-2964.wav");
+      } else if (isFinalCardSlotFlashLEDStepColorYellow) {
+        playAudioWAV("mixkit-retro-confirmation-tone-2860_edited.wav");
       } else if (isFinalCardSlotFlashLEDStepColorGreen) {
         playAudioWAV("/mixkit-access-allowed-tone-2869_edited.wav");
       }
