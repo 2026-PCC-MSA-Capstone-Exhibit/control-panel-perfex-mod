@@ -104,7 +104,7 @@ Install the CNMAT Externals by CNMAT library if you don't already have it:
 
 Refer to the example image below for usage of the `OSC-route` object. Once you have the library installed you can right click the object to access further documentation.
 
-![2026-05-29_Control_Panel_OSC_example_maxmsp.PNG](Doc/2026-05-29_Control_Panel_OSC_example_maxmsp.png)
+![2026-06-10_Control_Panel_OSC_example_maxmsp.PNG](Doc/2026-06-10_Control_Panel_OSC_example_maxmsp.png)
 
 ### Unity
 

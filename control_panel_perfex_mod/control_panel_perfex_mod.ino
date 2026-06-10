@@ -13,7 +13,7 @@
  */
 #include <OSCMessage.h>
 const IPAddress OSC_BROADCAST_IP(255, 255, 255, 255);
-const unsigned int OSC_PORT = 8000;
+const unsigned int OSC_PORT = 9001;
 
 /*
   WIFI:
@@ -174,7 +174,7 @@ unsigned long micWindowStartMilliseconds = 0;
 int rawMicSignalMax = 0;
 int rawMicSignalMin = 4095;
 int previousmicValue = -1;
-const unsigned long MIC_WINDOW_MILLISECONDS = 50;
+const unsigned long MIC_WINDOW_MILLISECONDS = 20;
 
 /* SD CARD & AUDIO */
 void setupSDCardReader() {
@@ -189,7 +189,7 @@ void setupSDCardReader() {
 
 void setupAudio() {
   audio.setPinout(PERFEXMOD_SPEAKER_BCLK_PIN, PERFEXMOD_SPEAKER_LRC_PIN, PERFEXMOD_SPEAKER_DIN_PIN);
-  audio.setVolume(15); // 0-21
+  audio.setVolume(17); // 0-21
 }
 
 void playAudioWAV(const char* filename) {
@@ -202,28 +202,33 @@ void playAudioWAV(const char* filename) {
 const char* BACKGROUND_WHITE_NOISE_AUDIO_WAV = "/freesound_community-am-radio-static-60183_edited.wav";
 
 // BUTTON: "VOICE RECORDER SWITCH"
-const int BUTTON_A_SOUND_LIBRARY_COUNT = 2;
+const int BUTTON_A_SOUND_LIBRARY_COUNT = 3;
 const char* BUTTON_A_SOUND_LIBRARY[BUTTON_A_SOUND_LIBRARY_COUNT] = {
   "/freesound_community-microphone-feedback-67484_edited-2.wav",
+  "/freesound_community-dropping-the-mic-41022_edited.wav",
   "/freesound_community-microphone-feedback-67484_edited-3.wav"
 };
 
 // BUTTON: "HOT SHOT ON"
-const int BUTTON_B_SOUND_LIBRARY_COUNT = 1;
+const int BUTTON_B_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_B_SOUND_LIBRARY[BUTTON_B_SOUND_LIBRARY_COUNT] = {
-  "/wavsource-disconnect-911d.wav"
+  "/wavsource-disconnect-911d_edited.wav",
+  "/Meg_911-whats-your-emergency.wav"
 };
 
 // BUTTON: "TONE"
-const int BUTTON_C_SOUND_LIBRARY_COUNT = 1;
+const int BUTTON_C_SOUND_LIBRARY_COUNT = 3;
 const char* BUTTON_C_SOUND_LIBRARY[BUTTON_C_SOUND_LIBRARY_COUNT] = {
-  "/mixkit-dial-phone-tone-2862_edited-2sec.wav"
+  "/mixkit-dial-phone-tone-2862_edited-2sec.wav",
+  "/hitslab-jazz-lounge-elevator-music-322314_edited.wav",
+  "/lnplusmusic-jazz-lounge-elevator-music-331055_edited.wav"
 };
 
 // BUTTON: "ALARM ON"
-const int BUTTON_D_SOUND_LIBRARY_COUNT = 1;
+const int BUTTON_D_SOUND_LIBRARY_COUNT = 2;
 const char* BUTTON_D_SOUND_LIBRARY[BUTTON_D_SOUND_LIBRARY_COUNT] = {
-  "/mixkit-classic-alarm-995.wav"
+  "/mixkit-classic-alarm-995_edited.wav",
+  "/freesound_community-emergency-intercom-30964_edited.wav"
 };
 
 // BUTTON: "CARD SLOT" physical input
@@ -238,9 +243,10 @@ const char* BUTTON_1_4_SOUND_LIBRARY[BUTTON_1_4_SOUND_LIBRARY_COUNT] = {
 };
 
 // BUTTON: 5, "IC (INTERCOM)" of "TRANSMITTER SWITCHES"
-const int BUTTON_5_SOUND_LIBRARY_COUNT = 2;
+const int BUTTON_5_SOUND_LIBRARY_COUNT = 3;
 const char* BUTTON_5_SOUND_LIBRARY[BUTTON_5_SOUND_LIBRARY_COUNT] = {
   "/mixkit-microphone-hit-2181.wav",
+  "/freesound_community-announcement-sound-104411_edited.wav",
   "/mixkit-radio-waves-glitch-white-noise-1041_edited.wav"
 };
 
@@ -376,13 +382,13 @@ void loop() {
           playAudioWAV(BUTTON_E_SOUND_LIBRARY[randomIndexE]);
           startCardSlotFlashLEDSequence();
         } else if (isButton1) {
-          // TODO
+          playAudioWAV("/zach_positive_feedback_2_low.wav");
         } else if (isButton2) {
-          // TODO
+          playAudioWAV("/zach_positive_feedback_2_mid.wav");
         } else if (isButton3) {
-          // TODO
+          playAudioWAV("/zach_positive_feedback_2_high.wav");
         } else if (isButton4) {
-          // TODO
+          playAudioWAV("/zach_positive_feedback_2_high2.wav");
         } else if (isButton5) {
           digitalWrite(PERFEXMOD_LED_1_PIN, HIGH);
           int randomIndex5 = random(BUTTON_5_SOUND_LIBRARY_COUNT);
@@ -451,8 +457,25 @@ void loop() {
   bool isKnobWaitElapsed = millis() - lastKnobOSCSendMilliseconds > 50;
   for (int i = 0; i < KNOB_COUNT; i++) {
     int rawKnobValue = analogRead(KNOB_PINS[i]);
-    int knobValue = constrain(map(rawKnobValue, 0, 4095, 0, 127), 0, 127);
-    bool isKnobValueDifferent = abs(knobValue - previousKnobValues[i]) > 4;
+    float normalizedKnobValue = rawKnobValue / 4095.0;
+    bool isKnob1 = i == 0;
+    bool isKnob2 = i == 1;
+    bool isKnob3 = i == 2;
+    bool isKnob4 = i == 3;
+    float curve_exponent;
+    if (isKnob1 || isKnob2 || isKnob3) {
+      curve_exponent = 0.35; // 1.0 = no change, <1.0 = expand low end, compress high end, >1.0 = compress low end, expand high end
+    } else if (isKnob4) {
+      curve_exponent = 1.0;
+    } else {
+      curve_exponent = 0.7;
+    }
+    float curvedKnobValue = pow(normalizedKnobValue, curve_exponent);
+    int knobValue = constrain((int)(curvedKnobValue * 127), 0, 127);
+    if (isKnob4) {
+      knobValue = constrain(map(knobValue, 65, 127, 0, 127), 0, 127);
+    }
+    bool isKnobValueDifferent = abs(knobValue - previousKnobValues[i]) > 5;
     if (isKnobValueDifferent && isKnobWaitElapsed) {
       previousKnobValues[i] = knobValue;
       const char* knobOSCAddress = KNOB_OSC_ADDRESSES[i];
@@ -463,25 +486,22 @@ void loop() {
 
   // MICROPHONE (MAX9814)
   int rawMicValue = analogRead(PERFEXMOD_MICROPHONE_PIN);
-  // Serial.print("rawMicValue: ");
-  // Serial.println(rawMicValue);
-  // delay(100);
-  // if (rawMicValue > rawMicSignalMax) rawMicSignalMax = rawMicValue;
-  // if (rawMicValue < rawMicSignalMin) rawMicSignalMin = rawMicValue;
-  // if (millis() - micWindowStartMilliseconds > MIC_WINDOW_MILLISECONDS) {
-  //   int rawMicValuePeakToPeak = rawMicSignalMax - rawMicSignalMin;
-  //   int micValue = constrain(map(rawMicValuePeakToPeak, 0, 2000, 0, 127), 0, 127);
+  if (rawMicValue > rawMicSignalMax) rawMicSignalMax = rawMicValue;
+  if (rawMicValue < rawMicSignalMin) rawMicSignalMin = rawMicValue;
+  if (millis() - micWindowStartMilliseconds > MIC_WINDOW_MILLISECONDS) {
+    int rawMicValuePeakToPeak = rawMicSignalMax - rawMicSignalMin;
+    int micValue = constrain(map(rawMicValuePeakToPeak, 1200, 2000, 0, 127), 0, 127);
 
-  //   if (abs(micValue - previousmicValue) > 3) {
-  //     previousmicValue = micValue;
-  //     sendOSCMessage("/perfexmod/mic", micValue);
-  //     serialPrintOSCData("/perfexmod/mic", micValue);
-  //   }
+    if (abs(micValue - previousmicValue) > 3) {
+      previousmicValue = micValue;
+      sendOSCMessage("/perfexmod/mic", micValue);
+      // serialPrintOSCData("/perfexmod/mic", micValue); // Warning: This will flood the Serial Monitor
+    }
 
-  //   // Reset the Mic Window
-  //   micWindowStartMilliseconds = millis();
-  //   rawMicSignalMax = 0;
-  //   rawMicSignalMin = 4095;
-  // }
+    // Reset the Mic Window
+    micWindowStartMilliseconds = millis();
+    rawMicSignalMax = 0;
+    rawMicSignalMin = 4095;
+  }
 
 }
